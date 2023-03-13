@@ -1,0 +1,6 @@
+name: Memory
+version: '${version}'
+main: com.teenkung.memory.Memory
+api-version: 1.19
+prefix: Memory
+authors: [ Teenkung123 ]

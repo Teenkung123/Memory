@@ -1,0 +1,25 @@
+Memory-Name: "Memory"
+MySQL:
+  Host: "localhost"
+  Port: 3306
+  Username: "root"
+  Password: "minecraft"
+  Database: "Memory"
+  DummyData:
+    Display: Sending a dummy Data to prevent MySQL Timed out!
+    SendRate: 300
+
+Levels:
+  1:
+    Display: "Level 1"
+    Regen-Time: 480
+    Max-Energy: 64
+  2:
+    Display: "Level 2"
+    Regen-Time: 480
+    Max-Energy: 128
+  3:
+    Display: "Level 3"
+    Regen-Time: 480
+    Max-Energy: 256
+
