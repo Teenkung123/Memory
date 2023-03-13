@@ -24,6 +24,11 @@ public class CommandHandler implements CommandExecutor {
         /memory stopBypass [player]
          */
 
+        if (sender instanceof Player && !sender.hasPermission("memory.admin")) {
+            //Sender has no permission
+            sender.sendMessage("");
+            return false;
+        }
         if (args.length == 0) {
 
             sender.sendMessage("Not done yet.");

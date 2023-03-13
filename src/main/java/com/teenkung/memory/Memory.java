@@ -1,9 +1,12 @@
 package com.teenkung.memory;
 
+import com.iridium.iridiumcolorapi.IridiumColorAPI;
 import com.teenkung.memory.Commands.CommandHandler;
 import com.teenkung.memory.Commands.CommandTabCompleter;
 import com.teenkung.memory.Manager.MySQLManager;
+import com.teenkung.memory.Manager.PlayerManager;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.Connection;
@@ -37,15 +40,19 @@ public final class Memory extends JavaPlugin {
         //Register Command Listeners
         Objects.requireNonNull(getCommand("memory")).setExecutor(new CommandHandler());
         Objects.requireNonNull(getCommand("memory")).setTabCompleter(new CommandTabCompleter());
+
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                PlayerManager.addPlayer(player);
+            }
+        }, 30);
     }
 
     @Override
-    public void onDisable() {
-        sql.Disconnect();
-    }
+    public void onDisable() { sql.Disconnect(); }
 
     public static Memory getInstance() { return instance; }
-    public static String colorize(String str) { return str; }
+    public static String colorize(String string) { return IridiumColorAPI.process(string); }
     public static Connection getConnection() { return sql.getConnection(); }
     public static Long getCurrentUnixSeconds() {
         return System.currentTimeMillis()/1000;

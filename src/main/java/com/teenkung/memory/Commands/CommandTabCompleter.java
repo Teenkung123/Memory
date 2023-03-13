@@ -28,6 +28,12 @@ public class CommandTabCompleter implements TabCompleter {
         /memory stopBypass [player]
          */
 
+        if (sender instanceof Player && !sender.hasPermission("memory.admin")) {
+            //Sender has no permission
+            sender.sendMessage("");
+            return null;
+        }
+
         ArrayList<String> result = new ArrayList<>();
         if (args.length == 1) {
             result.add("help");

@@ -1,4 +1,5 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'java'
 }
 
@@ -15,10 +16,25 @@ repositories {
         name = 'sonatype'
         url = 'https://oss.sonatype.org/content/groups/public/'
     }
+    maven {
+        name = 'iridiumdevelopment'
+        url = 'https://nexus.iridiumdevelopment.net/repository/maven-releases/'
+    }
+    maven {
+        url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'
+    }
 }
 
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.19.3-R0.1-SNAPSHOT'
+    compileOnly 'me.clip:placeholderapi:2.11.2'
+    implementation 'com.iridium:IridiumColorAPI:1.0.6'
+}
+
+shadowJar {
+    dependencies {
+        include dependency('com.iridium:IridiumColorAPI:1.0.6')
+    }
 }
 
 def targetJavaVersion = 17
