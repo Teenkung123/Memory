@@ -11,8 +11,11 @@ MySQL:
 
 Levels:
   1:
+    #Display name of this level
     Display: "Level 1"
+    #Regeneration Time per 1 Energy (Seconds)
     Regen-Time: 480
+    #Maximum Capacity of this Level
     Max-Energy: 64
   2:
     Display: "Level 2"
@@ -23,3 +26,41 @@ Levels:
     Regen-Time: 480
     Max-Energy: 256
 
+Messages:
+  Prefix: "&7<GRADIENT:2FFFD3>[Memory]</GRADIENT:F6FF43>&r "
+  MySQL:
+    Connecting: "&aConnecting to MySQL server."
+    Connected: "&aConnected to MySQL server."
+    Error: "&4Could not connect to MySQL server. Disabling plugin. . ."
+  Command:
+    invalid-arguments: "<GRADIENT:F6FF43>Invalid Arguments! please try again.</GRADIENT:FF0000>"
+    Upgrade:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      invalid-modifier: "<GRADIENT:F6FF43>Invalid Arguments: [Modifier] does not exists.</GRADIENT:FF0000>"
+      invalid-value: "<GRADIENT:F6FF43>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"
+      feedback: "<GRADIENT:F6FF43>Successfully upgraded <player>'s <modifier></GRADIENT:E564FF>"
+    Set:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      invalid-modifier: "<GRADIENT:F6FF43>Invalid Arguments: [Modifier] does not exists.</GRADIENT:FF0000>"
+      invalid-value: "<GRADIENT:F6FF43>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"
+      feedback: "<GRADIENT:F6FF43>Successfully set <player>'s <modifier> to <value></GRADIENT:E564FF>"
+    Give:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      invalid-value: "<GRADIENT:F6FF43>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"
+      feedback: "<GRADIENT:F6FF43>Successfully modified <player>'s Memory to <value></GRADIENT:E564FF>"
+    Boost:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      invalid-multiplier: "<GRADIENT:F6FF43>Invalid Arguments: [Multiplier] or [Duration] does not valid.</GRADIENT:FF0000>"
+      feedback-player: "<GRADIENT:F6FF43>Successfully set <player>'s booster to <multiplier>x for <duration> seconds</GRADIENT:E564FF>"
+      feedback-server: "<GRADIENT:F6FF43>Successfully set Global Boost to <multiplier>x for <duration> seconds</GRADIENT:E564FF>"
+      feedback-stop-player: "<GRADIENT:F6FF43>Successfully stop the Boost state of <player></GRADIENT:E564FF>"
+      feedback-stop-server: "<GRADIENT:F6FF43>Successfully stop the Boost state of the server</GRADIENT:E564FF>"
+    SetBypass:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      invalid-duration: "<GRADIENT:F6FF43>Invalid Arguments: [Duration] does not valid.</GRADIENT:FF0000>"
+      feedback: "<GRADIENT:F6FF43>Successfully set Bypass state of <player> to</GRADIENT:E564FF> <SOLID:00FF00>True<GRADIENT:F6FF43> for <duration> seconds</GRADIENT:E564FF>"
+    StopBypass:
+      invalid-player: "<GRADIENT:F6FF43>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
+      feedback: "<GRADIENT:F6FF43>Successfully set Bypass state of <player> to</GRADIENT:E564FF> <SOLID:FF0000>False"
+    Reload:
+      feedback: "<GRADIENT:F6FF43>Successfully reloaded the Configuration Files.</GRADIENT:E564FF> &e(<ms>ms)"

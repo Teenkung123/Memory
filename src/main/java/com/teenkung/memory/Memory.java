@@ -8,14 +8,18 @@ import com.teenkung.memory.Manager.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Objects;
 
 public final class Memory extends JavaPlugin {
 
     private static Memory instance;
+
+    public static HashMap<Player, BukkitTask> regenerationTask = new HashMap<>();
     private static MySQLManager sql;
     @Override
     public void onEnable() {
@@ -24,14 +28,15 @@ public final class Memory extends JavaPlugin {
         saveDefaultConfig();
         ConfigLoader.loadConfig();
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            System.out.println(colorize("&aConnecting to MySQL Database. . ."));
+            System.out.println(ConfigLoader.getMessage("MySQL.Connecting", false));
             sql = new MySQLManager();
             try {
                 sql.Connect();
+                System.out.println(ConfigLoader.getMessage("MySQL.Connected", false));
                 sql.createTable();
                 sql.startSendDummyData();
             } catch (SQLException e) {
-                System.out.println(colorize("&cFailed to connect to MySQL Database. Disabling Plugin"));
+                System.out.println(ConfigLoader.getMessage("MySQL.Error", false));
                 Bukkit.getPluginManager().disablePlugin(this);
                 throw new RuntimeException(e);
             }

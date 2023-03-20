@@ -18,6 +18,7 @@ public class CommandTabCompleter implements TabCompleter {
         /memory upgrade [player] [modifier] [value]
 
         /memory set [player] [modifier] [value]
+        /memory give [player] [amount] [OPTIONAL: canBypass]
 
         /memory boost player [player] [multiplier] [duration]
         /memory boost server [multiplier] [duration]
@@ -39,12 +40,14 @@ public class CommandTabCompleter implements TabCompleter {
             result.add("help");
             result.add("upgrade");
             result.add("set");
+            result.add("give");
             result.add("boost");
             result.add("setBypass");
             result.add("stopBypass");
+            result.add("debug");
 
         } else if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("upgrade")) {
+            if (args[0].equalsIgnoreCase("upgrade") || args[0].equalsIgnoreCase("give")) {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     result.add(player.getName());
                 }
@@ -74,6 +77,10 @@ public class CommandTabCompleter implements TabCompleter {
                 result.add("Rate");
                 result.add("Capacity");
                 result.add("CurrentMemory");
+            } else if (args[0].equalsIgnoreCase("give")) {
+                for (int i = -10 ; i <= 10 ; i++) {
+                    result.add(String.valueOf(i));
+                }
             } else if (args[0].equalsIgnoreCase("boost")) {
                 if (args[1].equalsIgnoreCase("player")) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
@@ -100,14 +107,17 @@ public class CommandTabCompleter implements TabCompleter {
                 }
             } else if (args[0].equalsIgnoreCase("set")) {
                 if (args[2].equalsIgnoreCase("CurrentMemory")) {
-                    for (int i = 0 ; i <= 10 ; i++) {
+                    for (int i = 0; i <= 10; i++) {
                         result.add(String.valueOf(i));
                     }
                 } else {
-                    for (int i = -5 ; i <= 5 ; i++) {
+                    for (int i = -5; i <= 5; i++) {
                         result.add(String.valueOf(i));
                     }
                 }
+            } else if (args[0].equalsIgnoreCase("give")) {
+                result.add("true");
+                result.add("false");
             } else if (args[0].equalsIgnoreCase("boost")) {
                 if (args[1].equalsIgnoreCase("player")) {
                     for (float i = 0.1F ; i <= 2.5F ; i = i + 0.1F) {

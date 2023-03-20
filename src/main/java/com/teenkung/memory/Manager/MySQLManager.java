@@ -47,7 +47,8 @@ public class MySQLManager {
                     + "RLevel INT,"
                     + "MLevel INT,"
                     + "CurrentAmount INT,"
-                    + "BypassUntil BIGINT"
+                    + "BypassUntil BIGINT,"
+                    + "LastRegen BIGINT"
                     + ");");
             statement.executeUpdate();
             statement.close();
