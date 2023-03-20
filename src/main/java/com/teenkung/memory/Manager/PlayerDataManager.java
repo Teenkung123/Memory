@@ -1,6 +1,9 @@
 package com.teenkung.memory.Manager;
 
 import com.teenkung.memory.ConfigLoader;
+import com.teenkung.memory.EventRegister.MemoryChangeEvent;
+import com.teenkung.memory.EventRegister.PlayerBoostEndEvent;
+import com.teenkung.memory.EventRegister.PlayerBoostEvent;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;

@@ -3,8 +3,13 @@ package com.teenkung.memory;
 import com.iridium.iridiumcolorapi.IridiumColorAPI;
 import com.teenkung.memory.Commands.CommandHandler;
 import com.teenkung.memory.Commands.CommandTabCompleter;
+import com.teenkung.memory.EventListener.JoinEvent;
+import com.teenkung.memory.EventListener.QuitEvent;
 import com.teenkung.memory.Manager.MySQLManager;
+import com.teenkung.memory.Manager.PlayerDataManager;
 import com.teenkung.memory.Manager.PlayerManager;
+import com.teenkung.memory.Manager.ServerManager;
+import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -46,11 +51,31 @@ public final class Memory extends JavaPlugin {
         Objects.requireNonNull(getCommand("memory")).setExecutor(new CommandHandler());
         Objects.requireNonNull(getCommand("memory")).setTabCompleter(new CommandTabCompleter());
 
+        Bukkit.getPluginManager().registerEvents(new JoinEvent(), this);
+        Bukkit.getPluginManager().registerEvents(new QuitEvent(), this);
+
         Bukkit.getScheduler().runTaskLater(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerManager.addPlayer(player);
+
+                Bukkit.getScheduler().runTaskLater(this, ()-> {
+                    Regeneration.updatePlayerRegenTask(player);
+                }, 20);
             }
         }, 30);
+
+        if (ServerManager.areNowBoosting()) {
+            ServerManager.countdownRemoveServerBooster(Math.max(ServerManager.getServerBoosterTimeout() - getCurrentUnixSeconds(), 0));
+        }
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                PlayerDataManager manager = PlayerManager.getDataManager(player);
+                if (manager != null) {
+                    manager.saveDataToMySQL();
+                }
+            }
+        }, 100, 300*20);
     }
 
     @Override
