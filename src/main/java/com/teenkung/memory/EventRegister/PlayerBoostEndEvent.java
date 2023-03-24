@@ -4,7 +4,7 @@ import com.teenkung.memory.Manager.PlayerDataManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-
+@SuppressWarnings("unused")
 public class PlayerBoostEndEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -43,6 +43,7 @@ public class PlayerBoostEndEvent extends Event {
         return boostTimeout;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public HandlerList getHandlers() {
         return HANDLERS;

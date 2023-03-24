@@ -3,6 +3,8 @@ version: '${version}'
 main: com.teenkung.memory.Memory
 api-version: 1.19
 prefix: Memory
+softdepend:
+  - PlaceholderAPI
 authors: [ Teenkung123, downYoutube2548]
 commands:
   memory:

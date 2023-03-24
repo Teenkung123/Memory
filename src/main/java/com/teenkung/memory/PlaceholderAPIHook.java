@@ -4,9 +4,10 @@ import com.teenkung.memory.Manager.PlayerDataManager;
 import com.teenkung.memory.Manager.PlayerManager;
 import com.teenkung.memory.Manager.ServerManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+
+import javax.annotation.Nullable;
 
 public class PlaceholderAPIHook extends PlaceholderExpansion {
     @SuppressWarnings("NullableProblems")
@@ -28,7 +29,10 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
     }
 
     @Override
-    public String onRequest(OfflinePlayer player, String params) {
+    public String onRequest(OfflinePlayer player, @Nullable String params) {
+        if (params == null) {
+            return "";
+        }
         if (player.isOnline()) {
             Player target = player.getPlayer();
             PlayerDataManager manager = PlayerManager.getDataManager(target);
@@ -42,6 +46,24 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 return String.valueOf(ConfigLoader.getRegenTime(manager.getRegenLevel()) / (manager.getBoosterMultiplier()+ ServerManager.getServerBoosterMultiplier()));
             } else if (params.equalsIgnoreCase("getMaxCapacity")) {
                 return String.valueOf(ConfigLoader.getMax(manager.getMaxCapacityLevel()));
+            } else if (params.equalsIgnoreCase("getTimeLeft")) {
+                if (manager.getLastRegenerationTime() + ConfigLoader.getRegenTime(manager.getRegenLevel()) < Memory.getCurrentUnixSeconds()) { return "0"; }
+
+                long time = ConfigLoader.getRegenTime(manager.getRegenLevel()) - (Memory.getCurrentUnixSeconds() - manager.getLastRegenerationTime());
+                double serverBoost = ServerManager.getServerBoosterMultiplier();
+                double playerBoost = manager.getBoosterMultiplier();
+                long serverBoostTime = Memory.getCurrentUnixSeconds() - ServerManager.getServerBoosterDuration();
+                long playerBoostTime = Memory.getCurrentUnixSeconds() - manager.getBoosterDuration();
+
+                if (serverBoostTime < Memory.getCurrentUnixSeconds()) { serverBoost = 1; }
+                if (playerBoostTime < Memory.getCurrentUnixSeconds()) { playerBoost = 1; }
+
+                //Equation: R/((B+b)/(R/min(S+s, R)))
+                return Double.valueOf(time/((playerBoost+serverBoost)/(time/Float.valueOf(Math.min(serverBoostTime + playerBoostTime, time)).doubleValue()))).toString();
+
+
+            } else if (params.equalsIgnoreCase("getTotalTimeLeft")) {
+
             }
         } else {
             return null;

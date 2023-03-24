@@ -5,6 +5,7 @@ import com.teenkung.memory.EventRegister.ServerBoostEvent;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -41,22 +42,16 @@ public class ServerManager {
         double old_multiplier = getServerBoosterMultiplier();
         long old_duration = getServerBoosterDuration();
         long old_timeout = getServerBoosterTimeout();
-
-        World world = Bukkit.getWorlds().get(0);
-        PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
         long timeout = Memory.getCurrentUnixSeconds() + duration;
 
         serverContainer.set(multi, PersistentDataType.DOUBLE, multiplier);
         serverContainer.set(dura, PersistentDataType.LONG, duration);
         serverContainer.set(out, PersistentDataType.LONG, timeout);
 
-        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> {
-            Bukkit.getPluginManager().callEvent(new ServerBoostEvent(multiplier, duration, timeout, old_multiplier, old_duration, old_timeout));
-        });
+        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new ServerBoostEvent(multiplier, duration, timeout, old_multiplier, old_duration, old_timeout)));
+
+        updateServerBooster(multiplier, duration, timeout);
+        countdownRemoveServerBooster(duration);
 
         Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -66,14 +61,17 @@ public class ServerManager {
     }
 
     public static boolean areNowBoosting() {
+        return serverTimeout > Memory.getCurrentUnixSeconds();
+    }
+
+    public static void resetData() {
         World world = Bukkit.getWorlds().get(0);
         PersistentDataContainer serverContainer = world.getPersistentDataContainer();
+        Utils.removeContainer(serverContainer);
 
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-        return serverContainer.has(multi, PersistentDataType.DOUBLE) && serverContainer.has(dura, PersistentDataType.LONG) && serverContainer.has(out, PersistentDataType.LONG) && serverContainer.get(out, PersistentDataType.LONG) > Memory.getCurrentUnixSeconds();
+        serverMultiplier = 1D;
+        serverDuration = 0L;
+        serverTimeout = Memory.getCurrentUnixSeconds()-1;
     }
 
     public static void countdownRemoveServerBooster(long duration) {
@@ -83,14 +81,10 @@ public class ServerManager {
 
         serverCountdownBooster = Bukkit.getScheduler().runTaskLaterAsynchronously(Memory.getInstance(), () -> {
 
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> {
-                Bukkit.getPluginManager().callEvent(new ServerBoostEndEvent(getServerBoosterMultiplier(), getServerBoosterDuration(), getServerBoosterTimeout()));
-            });
+            Bukkit.broadcastMessage(ChatColor.GOLD+"SERVER MANAGER | SERVER BOOSTER ENDED");
+            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new ServerBoostEndEvent(getServerBoosterMultiplier(), getServerBoosterDuration(), getServerBoosterTimeout())));
 
-            World world = Bukkit.getWorlds().get(0);
-            PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-
-            PlayerDataManager.removeContainer(serverContainer);
+            resetData();
 
             Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
                 for (Player player : Bukkit.getOnlinePlayers()) {

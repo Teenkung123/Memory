@@ -2,7 +2,7 @@ package com.teenkung.memory.EventRegister;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-
+@SuppressWarnings("unused")
 public class ServerBoostEndEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -29,6 +29,7 @@ public class ServerBoostEndEvent extends Event {
         return boostTimeout;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public HandlerList getHandlers() {
         return HANDLERS;

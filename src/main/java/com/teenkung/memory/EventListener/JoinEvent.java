@@ -58,11 +58,8 @@ public class JoinEvent implements Listener {
                 delay = Math.max(regen_rate - left_over_time, 0);
 
             }
-
-            playerData.setLastTaskDelay(delay);
-            playerData.setLastTaskPeriod(period);
             if (playerData.getCurrentMemory() > 0) {
-                Regeneration.addTask(event.getPlayer(), delay, period);
+                Regeneration.addTask(event.getPlayer(), delay, period, ServerManager.getServerBoosterMultiplier(), playerData.getBoosterMultiplier());
             }
         }, 20);
     }

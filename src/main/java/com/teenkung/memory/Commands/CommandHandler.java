@@ -7,14 +7,21 @@ import com.teenkung.memory.Manager.ServerManager;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+
+import static com.teenkung.memory.Memory.colorize;
 
 public class CommandHandler implements CommandExecutor {
     @Override
-    public boolean onCommand(@SuppressWarnings("NullableProblems") CommandSender sender, @SuppressWarnings("NullableProblems") Command command, @SuppressWarnings("NullableProblems") String label, String[] args) {
+    public boolean onCommand(@SuppressWarnings("NullableProblems") CommandSender sender, @SuppressWarnings("NullableProblems") Command command, @SuppressWarnings("NullableProblems") String label, @SuppressWarnings("NullableProblems") String[] args) {
 
         /*
         /memory help
@@ -45,45 +52,48 @@ public class CommandHandler implements CommandExecutor {
         } else {
             if (args[0].equalsIgnoreCase("help")) {
 
-                sender.sendMessage("Not done yet.");
-                //TODO: Help menu
+                for (String s : Memory.getInstance().getConfig().getStringList("Messages.Command.Help")) {
+                    sender.sendMessage(colorize(s));
+                }
 
             } else if (args[0].equalsIgnoreCase("upgrade")) {
                 //Structure: /memory upgrade [player] [modifier] [value]
                 if (args.length >= 4) {
-                    Player target = Bukkit.getPlayer(args[2]);
+                    Player target = Bukkit.getPlayer(args[1]);
                     if (target != null) {
                         try {
                             int value = Integer.parseInt(args[3]);
                             PlayerDataManager manager = PlayerManager.getDataManager(target);
-                            if (args[1].equalsIgnoreCase("Rate")) {
+                            if (args[2].equalsIgnoreCase("Rate")) {
                                 manager.setRegenLevel(manager.getRegenLevel() + value);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
+                                Regeneration.updatePlayerRegenTask(target);
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Regeneration Level")
                                         .replaceAll("<value>", String.valueOf(value))
-                                );
-                            } else if (args[1].equalsIgnoreCase("Capacity")) {
+                                ));
+                            } else if (args[2].equalsIgnoreCase("Capacity")) {
                                 manager.setCurrentMemory(manager.getMaxCapacityLevel() + value, false);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
+                                Regeneration.updatePlayerRegenTask(target);
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Capacity Level")
                                         .replaceAll("<value>", String.valueOf(value))
-                                );
+                                ));
                             } else {
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-modifier", true));
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-modifier", true)));
                                 //Invalid arguments [modifier] does not exist
                             }
                         } catch (NumberFormatException e) {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-value", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-value", true)));
                             //Invalid arguments [value] does not valid
                         }
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-player", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-player", true)));
                         //Invalid arguments [player] does not exist
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments [modifier] [player] [value]
                 }
             } else if (args[0].equalsIgnoreCase("set")) {
@@ -97,39 +107,41 @@ public class CommandHandler implements CommandExecutor {
                             PlayerDataManager manager = PlayerManager.getDataManager(target);
                             if (args[2].equalsIgnoreCase("Rate")) {
                                 manager.setRegenLevel(value);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Set.feedback", true)
+                                Regeneration.updatePlayerRegenTask(target);
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Regeneration Level")
                                         .replaceAll("<value>", String.valueOf(value))
-                                );
+                                ));
                             } else if (args[2].equalsIgnoreCase("Capacity")) {
                                 manager.setMaxCapacityLevel(value);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Set.feedback", true)
+                                Regeneration.updatePlayerRegenTask(target);
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Capacity Level")
                                         .replaceAll("<value>", String.valueOf(value))
-                                );
+                                ));
                             } else if (args[2].equalsIgnoreCase("CurrentMemory")) {
                                 manager.setCurrentMemory(value, false);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Set.feedback", true)
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Current Memory")
                                         .replaceAll("<value>", String.valueOf(value))
-                                );
+                                ));
                             } else {
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-modifier", true));
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-modifier", true)));
                                 //Invalid arguments [modifier] does not exist
                             }
                         } catch (NumberFormatException e) {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-value", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-value", true)));
                             //Invalid arguments [value] does not valid
                         }
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.Upgrade.invalid-player", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.invalid-player", true)));
                         //Invalid arguments [player] does not exist / online
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments [modifier] [player] [value]
                 }
             } else if (args[0].equalsIgnoreCase("give")) {
@@ -146,29 +158,29 @@ public class CommandHandler implements CommandExecutor {
                                         return false;
                                     } else {
                                         manager.setCurrentMemory(manager.getCurrentMemory() + amount, false);
-                                        sender.sendMessage(ConfigLoader.getMessage("Command.Give.feedback", true)
+                                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.feedback", true)
                                                 .replaceAll("<player>", target.getName())
                                                 .replaceAll("<value>", String.valueOf(manager.getCurrentMemory()))
-                                        );
+                                        ));
                                     }
                                 } else {
                                     manager.setCurrentMemory(manager.getCurrentMemory() + amount, false);
-                                    sender.sendMessage(ConfigLoader.getMessage("Command.Give.feedback", true)
+                                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.feedback", true)
                                             .replaceAll("<player>", target.getName())
                                             .replaceAll("<value>", String.valueOf(manager.getCurrentMemory()))
-                                    );
+                                    ));
                                 }
                             }
                         } catch (NumberFormatException e) {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.Give.invalid-value", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.invalid-value", true)));
                             //Invalid arguments [value]
                         }
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.Give.invalid-player", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.invalid-player", true)));
                         //Invalid arguments [player] does not exist / online
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments: [player] [amount] [OPTIONAL: canBypass]
                 }
             } else if (args[0].equalsIgnoreCase("boost")) {
@@ -192,22 +204,22 @@ public class CommandHandler implements CommandExecutor {
                                     PlayerDataManager manager = PlayerManager.getDataManager(target);
                                     manager.setBooster(multiplier, duration);
 
-                                    sender.sendMessage(ConfigLoader.getMessage("Command.Boost.feedback-server", true)
+                                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-player", true)
                                             .replaceAll("<modifier>", String.valueOf(multiplier))
                                             .replaceAll("<duration>", String.valueOf(duration))
                                             .replaceAll("<player>", target.getName())
-                                    );
+                                    ));
 
                                 } catch (NumberFormatException e) {
-                                    sender.sendMessage(ConfigLoader.getMessage("Command.Boost.invalid-multiplier", true));
+                                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.invalid-multiplier", true)));
                                     //Invalid arguments [multiplier] or [duration] does not valid
                                 }
                             } else {
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Boost.invalid-player", true));
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.invalid-player", true)));
                                 //Invalid arguments [player] does not exist / online
                             }
                         } else {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                             //Incomplete command arguments [player] [multiplier] [duration]
                         }
                     } else if (args[1].equalsIgnoreCase("server")) {
@@ -218,17 +230,17 @@ public class CommandHandler implements CommandExecutor {
                                 Long duration = Long.parseLong(args[3]);
 
                                 ServerManager.setServerBooster(multiplier, duration);
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Boost.feedback-server", true)
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-server", true)
                                         .replaceAll("<modifier>", String.valueOf(multiplier))
                                         .replaceAll("<duration>", String.valueOf(duration))
-                                );
+                                ));
 
                             } catch (NumberFormatException e) {
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Boost.invalid-multiplier", true));
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.invalid-multiplier", true)));
                                 //Invalid arguments [multiplier] or [duration] does not valid
                             }
                         } else {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                             //Incomplete command arguments [multiplier] [duration]
                         }
                     } else if (args[1].equalsIgnoreCase("stop")) {
@@ -246,14 +258,14 @@ public class CommandHandler implements CommandExecutor {
                                         PlayerDataManager manager = PlayerManager.getDataManager(target);
                                         manager.setBooster(1D, 0L);
 
-                                        sender.sendMessage(ConfigLoader.getMessage("Command.Boost.feedback-stop-player", true).replaceAll("<player>", target.getName()));
+                                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-stop-player", true).replaceAll("<player>", target.getName())));
 
                                     } else {
-                                        sender.sendMessage(ConfigLoader.getMessage("Command.Boost.invalid-player", true));
+                                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.invalid-player", true)));
                                         //Invalid arguments [player] does not exist / online
                                     }
                                 } else {
-                                    sender.sendMessage(ConfigLoader.getMessage("Command.Boost.invalid-player", true));
+                                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.invalid-player", true)));
                                     //Incomplete command arguments [player]
                                 }
                             } else if (args[2].equalsIgnoreCase("server")) {
@@ -262,16 +274,16 @@ public class CommandHandler implements CommandExecutor {
                                 sender.sendMessage("");
                                 ServerManager.setServerBooster(1D, 0L);
 
-                                sender.sendMessage(ConfigLoader.getMessage("Command.Boost.feedback-stop-server", true));
+                                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-stop-server", true)));
 
                             }
                         }
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                         //Incomplete command arguments [ALL]
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments [ALL]
                 }
             } else if (args[0].equalsIgnoreCase("setBypass")) {
@@ -284,21 +296,21 @@ public class CommandHandler implements CommandExecutor {
 
                             PlayerDataManager manager = PlayerManager.getDataManager(target);
                             manager.setBypassTime(Memory.getCurrentUnixSeconds() + duration);
-                            sender.sendMessage(ConfigLoader.getMessage("Command.StopBypass.feedback", true)
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.SetBypass.feedback", true)
                                     .replaceAll("<player>", target.getName())
                                     .replaceAll("<duration>", String.valueOf(duration))
-                            );
+                            ));
 
                         } catch (NumberFormatException e) {
-                            sender.sendMessage(ConfigLoader.getMessage("Command.SetBypass.invalid-duration", true));
+                            sender.sendMessage(colorize(ConfigLoader.getMessage("Command.SetBypass.invalid-duration", true)));
                             //Invalid arguments [duration] does not valid
                         }
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.SetBypass.invalid-player", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.SetBypass.invalid-player", true)));
                         //Invalid arguments [player] does not exist / online
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments [player] [duration]
                 }
             } else if (args[0].equalsIgnoreCase("stopBypass")) {
@@ -309,38 +321,75 @@ public class CommandHandler implements CommandExecutor {
 
                         PlayerDataManager manager = PlayerManager.getDataManager(target);
                         manager.setBypassTime(Memory.getCurrentUnixSeconds());
-                        sender.sendMessage(ConfigLoader.getMessage("Command.StopBypass.feedback", true)
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.StopBypass.feedback", true)
                                 .replaceAll("<player>", target.getName())
-                        );
+                        ));
 
                     } else {
-                        sender.sendMessage(ConfigLoader.getMessage("Command.StopBypass.invalid-player", true));
+                        sender.sendMessage(colorize(ConfigLoader.getMessage("Command.StopBypass.invalid-player", true)));
                         //Invalid arguments [player] does not exist / online
                     }
                 } else {
-                    sender.sendMessage(ConfigLoader.getMessage("Command.invalid-arguments", true));
+                    sender.sendMessage(colorize(ConfigLoader.getMessage("Command.invalid-arguments", true)));
                     //Incomplete command arguments [player]
                 }
+
+
             } else if (args[0].equalsIgnoreCase("debug")) {
                 if (sender instanceof Player player) {
                     PlayerDataManager data = PlayerManager.getDataManager(player);
-                    player.sendMessage("MEMORY: "+data.getCurrentMemory());
-                    player.sendMessage("REGENERATION TASK: "+Memory.regenerationTask.get(player));
-                    player.sendMessage("COUNTDOWN BOOSTER: "+data.getCountdownBooster());
+                    player.sendMessage(ChatColor.GOLD+"MEMORY: "+data.getCurrentMemory());
+                    player.sendMessage(ChatColor.GOLD+"REGENERATION TASK: "+Memory.regenerationTask.get(player));
+                    player.sendMessage(ChatColor.GOLD+"COUNTDOWN BOOSTER: "+data.getCountdownBooster());
+                    player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+ServerManager.getServerBoosterMultiplier());
+                    player.sendMessage(ChatColor.GOLD+"PLAYER MULTIPLIER: "+data.getBoosterMultiplier());
+                    player.sendMessage(ChatColor.RED+"PLAYER IS BOOSTING: "+data.isNowBoosting());
+                    player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+data.getRegenerationTask().getServerMultiplier());
+                    player.sendMessage(ChatColor.GOLD+"PLAYER MULTIPLIER: "+data.getRegenerationTask().getPlayerMultiplier());
+                    player.sendMessage(ChatColor.GOLD+"PLAYER BOOST DURATION: "+Memory.getDurationFormat(data.getBoosterDuration()));
+                    player.sendMessage(ChatColor.GOLD+"PLAYER BOOST TIMEOUT: "+Memory.getTimeFormat(data.getBoosterTimeout()));
+
+                    NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
+                    NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
+                    NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
+
+                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | MULTI: "+data.getContainer().has(multi, PersistentDataType.DOUBLE));
+                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | DURA: "+data.getContainer().has(dura, PersistentDataType.LONG));
+                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | OUT: "+data.getContainer().has(out, PersistentDataType.LONG));
+
+                    World world = Bukkit.getWorlds().get(0);
+                    PersistentDataContainer serverContainer = world.getPersistentDataContainer();
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | MULTI: "+serverContainer.has(multi, PersistentDataType.DOUBLE));
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | DURA: "+serverContainer.has(dura, PersistentDataType.LONG));
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | OUT: "+serverContainer.has(out, PersistentDataType.LONG));
                 }
+
+
+
             } else if (args[0].equalsIgnoreCase("serverDebug")) {
                 sender.sendMessage("REGENERATION TASK MAP: "+Memory.regenerationTask);
+
+
+
+
+
             } else if (args[0].equalsIgnoreCase("reload")) {
                 long start = System.currentTimeMillis();
                 ConfigLoader.reloadConfig();
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     Regeneration.updatePlayerRegenTask(player);
                 }
-                sender.sendMessage(ConfigLoader.getMessage("Command.Reload.feedback", true).replaceAll("<ms>", String.valueOf(System.currentTimeMillis() - start)));
+                sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Reload.feedback", true).replaceAll("<ms>", String.valueOf(System.currentTimeMillis() - start))));
+
+            } else if (args[0].equalsIgnoreCase("updateTask")) {
+                assert sender instanceof Player;
+                Regeneration.updatePlayerRegenTask((Player) sender);
+            } else {
+                for (String s : Memory.getInstance().getConfig().getStringList("Messages.Command.Help")) {
+                    sender.sendMessage(colorize(s));
+                }
             }
         }
         return false;
     }
-
-
 }

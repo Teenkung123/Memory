@@ -7,6 +7,7 @@ import com.teenkung.memory.EventRegister.PlayerBoostEvent;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -16,8 +17,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-
+@SuppressWarnings("unused")
 public class PlayerDataManager {
 
     private final Player player;
@@ -29,10 +29,11 @@ public class PlayerDataManager {
     private int MLevel;
     private long lastRegenerationTime;
     private long leftOverTime;
-    private PersistentDataContainer container;
+    private final PersistentDataContainer container;
     private BukkitTask countdownBooster;
-    private double last_task_delay;
-    private double last_task_period;
+    private Double multiplier;
+    private Long duration;
+    private Long timeout;
 
 
     /**
@@ -76,8 +77,16 @@ public class PlayerDataManager {
                 }
                 statement2.close();
 
-                last_task_period = ConfigLoader.getRegenTime(RLevel);
-                last_task_delay = ConfigLoader.getRegenTime(RLevel);
+                //Load the Data Container
+                NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Multiplier");
+                NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Duration");
+                NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
+
+                Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | HAVE MEMORY PLAYER MULTIPLIER: " + container.has(multi, PersistentDataType.DOUBLE));
+                Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | MEMORY PLAYER MULTIPLIER: " + container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D));
+                this.multiplier = container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
+                this.duration = container.getOrDefault(dura, PersistentDataType.LONG, 0L);
+                this.timeout = container.getOrDefault(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
 
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -86,12 +95,15 @@ public class PlayerDataManager {
     }
 
 
+    public RegenerationTaskManager getRegenerationTask() { return Memory.regenerationTask.get(player); }
 
     /**
      * Request a player class object from this class
      * @return a Player class object
      */
     public Player getPlayer() { return player; }
+
+    public PersistentDataContainer getContainer() { return container; }
 
     /**
      * Request the Logout Time of the player
@@ -142,18 +154,6 @@ public class PlayerDataManager {
     public long getLeftOverTime() { return leftOverTime; }
 
     /**
-     * Request the duration of delay time of the last task
-     * @return the duration of delay time
-     */
-    public double getLastTaskDelay() { return last_task_delay; }
-
-    /**
-     * Request the duration each period of the last task
-     * @return the duration each period
-     */
-    public double getLastTaskPeriod() { return last_task_period; }
-
-    /**
      * Request Countdown task of player booster
      * @return Countdown boost Task
      */
@@ -164,8 +164,7 @@ public class PlayerDataManager {
      * @return Boost multiplier
      */
     public Double getBoosterMultiplier() {
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Multiplier");
-        return container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
+        return multiplier;
     }
 
     /**
@@ -173,8 +172,7 @@ public class PlayerDataManager {
      * @return Duration of boost time
      */
     public Long getBoosterDuration() {
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Duration");
-        return container.getOrDefault(dura, PersistentDataType.LONG, 0L);
+        return this.duration;
     }
 
     /**
@@ -182,39 +180,32 @@ public class PlayerDataManager {
      * @return The time that the player's boost will end
      */
     public Long getBoosterTimeout() {
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
-        return container.getOrDefault(dura, PersistentDataType.LONG, 0L);
-    }
-
-    public void setLastTaskDelay(double delay) {
-        last_task_delay = delay;
-    }
-
-    public void setLastTaskPeriod(double period) {
-        last_task_period = period;
+        return this.timeout;
     }
 
     public void setBooster(Double multiplier, Long duration) {
         // period remain = full-period - (now - last-regen-time)
-        double old_multiplier = getBoosterMultiplier();
-        long old_duration = getBoosterDuration();
-        long old_timeout = getBoosterTimeout();
-        double old_period = getLastTaskPeriod();
-        double old_delay = getLastTaskDelay();
 
-        double old_multiplied_period = ConfigLoader.getRegenTime(getRegenLevel()) / getBoosterMultiplier();
+        //double old_multiplied_period = ConfigLoader.getRegenTime(getRegenLevel()) / getBoosterMultiplier();
 
         NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Multiplier");
         NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Duration");
         NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
-
         long timeout = Memory.getCurrentUnixSeconds() + duration;
 
         // Countdown Boost
-        countdownBooster(timeout - Memory.getCurrentUnixSeconds());
+        countdownBooster(duration);
 
-        Regeneration.cancelTask(player);
+        container.set(multi, PersistentDataType.DOUBLE, multiplier);
+        container.set(dura, PersistentDataType.LONG, duration);
+        container.set(out, PersistentDataType.LONG, timeout);
+        this.multiplier = multiplier;
+        this.duration = duration;
+        this.timeout = timeout;
 
+        Regeneration.updatePlayerRegenTask(player);
+
+        /*
         double period_remain = Math.max(old_multiplied_period - (Memory.getCurrentUnixSeconds() - getLastRegenerationTime()), 0);
         long full_period = ConfigLoader.getRegenTime(getRegenLevel());
 
@@ -238,29 +229,19 @@ public class PlayerDataManager {
             boosted_full_period =  (full_period / multiplier);
         }
 
-        last_task_period = boosted_full_period;
-        last_task_delay = boosted_period_remain;
-
         if (getCurrentMemory() > 0) {
-            Regeneration.addTask(player, boosted_period_remain, boosted_full_period);
+            Regeneration.addTask(player, boosted_period_remain, boosted_full_period, ServerManager.getServerBoosterMultiplier(), multiplier);
         }
 
-        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> {
-            Bukkit.getPluginManager().callEvent(new PlayerBoostEvent(this, player, multiplier, duration, timeout, boosted_period_remain, boosted_full_period, old_multiplier, old_duration, old_timeout, old_delay, old_period));
-        });
+         */
 
-        container.set(multi, PersistentDataType.DOUBLE, multiplier);
-        container.set(dura, PersistentDataType.LONG, duration);
-        container.set(out, PersistentDataType.LONG, timeout);
+        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new PlayerBoostEvent(this, player, multiplier, duration, timeout)));
+
     }
 
     public boolean isNowBoosting() {
 
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-        return container.has(multi, PersistentDataType.DOUBLE) && container.has(dura, PersistentDataType.LONG) && container.has(out, PersistentDataType.LONG) && container.get(out, PersistentDataType.LONG) > Memory.getCurrentUnixSeconds();
+        return this.timeout > Memory.getCurrentUnixSeconds();
     }
 
     public boolean hasBoostingData() {
@@ -278,13 +259,15 @@ public class PlayerDataManager {
         }
         countdownBooster = Bukkit.getScheduler().runTaskLaterAsynchronously(Memory.getInstance(), () -> {
 
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> {
-                Bukkit.getPluginManager().callEvent(new PlayerBoostEndEvent(this, player, getBoosterMultiplier(), getBoosterDuration(), getBoosterTimeout()));
-            });
+            player.sendMessage(ChatColor.YELLOW+"PLAYER DATA MANAGER | PLAYER BOOSTER ENDED");
+            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new PlayerBoostEndEvent(this, player, getBoosterMultiplier(), getBoosterDuration(), getBoosterTimeout())));
 
-            Regeneration.cancelTask(player);
             countdownBooster = null;
 
+            resetBooster();
+            Regeneration.updatePlayerRegenTask(player);
+
+            /*
             double full_period = ConfigLoader.getRegenTime(RLevel);
             double player_multiplier = getBoosterMultiplier();
 
@@ -295,7 +278,7 @@ public class PlayerDataManager {
 
                 double server_multiplier = ServerManager.getServerBoosterMultiplier();
 
-                delay = Math.max((full_period/server_multiplier) - (getBoosterDuration()-(last_task_delay) % (full_period/player_multiplier)), 0);
+                delay = Math.max((full_period/server_multiplier) - (getBoosterDuration()-(Memory.regenerationTask.get(player).getDelay()) % (full_period/player_multiplier)), 0);
                 period = (full_period/server_multiplier);
 
             } else {
@@ -304,15 +287,12 @@ public class PlayerDataManager {
                 period = full_period;
 
             }
+            Regeneration.cancelTask(player);
 
             if (getCurrentMemory() > 0) {
-                Regeneration.addTask(player, delay, period);
-            }
+                Regeneration.addTask(player, delay, period, ServerManager.getServerBoosterMultiplier(), 1.0);
+            } */
 
-            removeContainer(container);
-
-            last_task_delay = (ConfigLoader.getRegenTime(RLevel));
-            last_task_period = (ConfigLoader.getRegenTime(RLevel));
 
         }, 20L * duration);
     }
@@ -409,15 +389,13 @@ public class PlayerDataManager {
                     period = regen_rate;
 
                 }
-                Regeneration.addTask(player, period, period);
+                Regeneration.addTask(player, period, period, ServerManager.getServerBoosterMultiplier(), getBoosterMultiplier());
             }
         }
 
         // Call event 'MemoryChangeEvent'
         if (!(oldValue == value)) {
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> {
-                Bukkit.getPluginManager().callEvent(new MemoryChangeEvent(this, player, oldValue, value));
-            });
+            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new MemoryChangeEvent(this, player, oldValue, value)));
         }
     }
 

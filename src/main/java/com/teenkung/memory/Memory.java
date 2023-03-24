@@ -5,10 +5,7 @@ import com.teenkung.memory.Commands.CommandHandler;
 import com.teenkung.memory.Commands.CommandTabCompleter;
 import com.teenkung.memory.EventListener.JoinEvent;
 import com.teenkung.memory.EventListener.QuitEvent;
-import com.teenkung.memory.Manager.MySQLManager;
-import com.teenkung.memory.Manager.PlayerDataManager;
-import com.teenkung.memory.Manager.PlayerManager;
-import com.teenkung.memory.Manager.ServerManager;
+import com.teenkung.memory.Manager.*;
 import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,6 +14,8 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -24,7 +23,7 @@ public final class Memory extends JavaPlugin {
 
     private static Memory instance;
 
-    public static HashMap<Player, BukkitTask> regenerationTask = new HashMap<>();
+    public static HashMap<Player, RegenerationTaskManager> regenerationTask = new HashMap<>();
     private static MySQLManager sql;
     @Override
     public void onEnable() {
@@ -58,9 +57,7 @@ public final class Memory extends JavaPlugin {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerManager.addPlayer(player);
 
-                Bukkit.getScheduler().runTaskLater(this, ()-> {
-                    Regeneration.updatePlayerRegenTask(player);
-                }, 20);
+                Bukkit.getScheduler().runTaskLater(this, ()-> Regeneration.updatePlayerRegenTask(player), 20);
             }
         }, 30);
 
@@ -76,10 +73,22 @@ public final class Memory extends JavaPlugin {
                 }
             }
         }, 100, 300*20);
+
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            if (Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("PlaceholderAPI")).isEnabled()) {
+                new PlaceholderAPIHook().register();
+            }
+        }
     }
 
     @Override
-    public void onDisable() { sql.Disconnect(); }
+    public void onDisable() {
+        Regeneration.cancelAllTasks();
+        Bukkit.getScheduler().getPendingTasks().stream()
+                .filter(task -> task.getOwner().equals(this))
+                .forEach(BukkitTask::cancel);
+        sql.Disconnect();
+    }
 
     public static Memory getInstance() { return instance; }
     public static String colorize(String string) { return IridiumColorAPI.process(string); }
@@ -87,4 +96,32 @@ public final class Memory extends JavaPlugin {
     public static Long getCurrentUnixSeconds() {
         return System.currentTimeMillis()/1000;
     }
+    public static String getDurationFormat(long unixTimeStampSecond) {
+        Date date = new Date(unixTimeStampSecond * 1000L); // Convert Unix timestamp to Java Date object
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss"); // Define the date format you want
+
+        return dateFormat.format(date);
+    }
+
+    public static String getTimeFormat(long unixTimeStampSecond) {
+        Date date = new Date(unixTimeStampSecond * 1000L); // Convert Unix timestamp to Java Date object
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"); // Define the date format you want
+
+        return dateFormat.format(date);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

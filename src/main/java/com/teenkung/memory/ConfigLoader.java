@@ -5,9 +5,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.HashMap;
 import java.util.List;
-
-import static com.teenkung.memory.Memory.colorize;
-
+@SuppressWarnings("unused")
 public class ConfigLoader {
 
     private static final HashMap<Integer, String> levelDisplay = new HashMap<>();
@@ -49,9 +47,9 @@ public class ConfigLoader {
 
     public static String getMessage(String path, boolean IncludePrefix) {
         if (IncludePrefix) {
-            return colorize(Memory.getInstance().getConfig().getString("Messages.Prefix", "") + colorize(Memory.getInstance().getConfig().getString("Messages."+path, "")));
+            return Memory.getInstance().getConfig().getString("Messages.Prefix", "") + Memory.getInstance().getConfig().getString("Messages."+path, "");
         } else {
-            return colorize(Memory.getInstance().getConfig().getString("Messages."+path, ""));
+            return Memory.getInstance().getConfig().getString("Messages."+path, "");
         }
     }
 

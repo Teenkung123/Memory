@@ -1,5 +1,6 @@
 package com.teenkung.memory.Commands;
 
+import com.teenkung.memory.ConfigLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -7,11 +8,15 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CommandTabCompleter implements TabCompleter {
+
+    private final ArrayList<Double> l = new ArrayList<>(Arrays.asList(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5));
     @Override
-    public List<String> onTabComplete(@SuppressWarnings("NullableProblems") CommandSender sender, @SuppressWarnings("NullableProblems") Command command, @SuppressWarnings("NullableProblems") String label, String[] args) {
+    public List<String> onTabComplete(@SuppressWarnings("NullableProblems") CommandSender sender, @SuppressWarnings("NullableProblems") Command command, @SuppressWarnings("NullableProblems") String label, @SuppressWarnings("NullableProblems") String[] args) {
 
         /*
         /memory help
@@ -45,6 +50,8 @@ public class CommandTabCompleter implements TabCompleter {
             result.add("setBypass");
             result.add("stopBypass");
             result.add("debug");
+            result.add("debugServer");
+            result.add("updateTask");
 
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("upgrade") || args[0].equalsIgnoreCase("give")) {
@@ -87,9 +94,7 @@ public class CommandTabCompleter implements TabCompleter {
                         result.add(player.getName());
                     }
                 } else if (args[1].equalsIgnoreCase("server")) {
-                    for (float i = 0.1F ; i <= 2.5F ; i = i + 0.1F) {
-                        result.add(String.valueOf(i));
-                    }
+                    result.addAll(l.stream().map(Object::toString).collect(Collectors.toCollection(ArrayList::new)));
                 } else if (args[1].equalsIgnoreCase("stop")) {
                     result.add("player");
                     result.add("server");
@@ -102,7 +107,7 @@ public class CommandTabCompleter implements TabCompleter {
 
         } else if (args.length == 4) {
             if (args[0].equalsIgnoreCase("upgrade")) {
-                for (int i = -5 ; i <= 5 ; i++) {
+                for (int i = 1; i <= ConfigLoader.getLevelList().size(); i++) {
                     result.add(String.valueOf(i));
                 }
             } else if (args[0].equalsIgnoreCase("set")) {
@@ -111,7 +116,7 @@ public class CommandTabCompleter implements TabCompleter {
                         result.add(String.valueOf(i));
                     }
                 } else {
-                    for (int i = -5; i <= 5; i++) {
+                    for (int i = 1; i <= ConfigLoader.getLevelList().size(); i++) {
                         result.add(String.valueOf(i));
                     }
                 }
@@ -120,9 +125,7 @@ public class CommandTabCompleter implements TabCompleter {
                 result.add("false");
             } else if (args[0].equalsIgnoreCase("boost")) {
                 if (args[1].equalsIgnoreCase("player")) {
-                    for (float i = 0.1F ; i <= 2.5F ; i = i + 0.1F) {
-                        result.add(String.valueOf(i));
-                    }
+                    result.addAll(l.stream().map(Object::toString).collect(Collectors.toCollection(ArrayList::new)));
                 } else if (args[1].equalsIgnoreCase("server")) {
                     for (int i = 1 ; i <= 30 ; i++) {
                         result.add(String.valueOf(i));
