@@ -20,4 +20,6 @@ public class PlayerManager {
         return dataManager.getOrDefault(player, null);
     }
 
+    public static HashMap<Player, PlayerDataManager> getMap() { return dataManager; }
+
 }

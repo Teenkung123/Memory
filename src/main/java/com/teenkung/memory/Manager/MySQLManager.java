@@ -16,7 +16,7 @@ public class MySQLManager {
             connection = DriverManager.getConnection(
                     "jdbc:mysql://" + Memory.getInstance().getConfig().getString("MySQL.Host") + ":" + Memory.getInstance().getConfig().getString("MySQL.Port")
                             + "/" + Memory.getInstance().getConfig().getString("MySQL.Database") + "?useSSL=false&autoReconnect=true",
-                    Memory.getInstance().getConfig().getString("MySQL.User"),
+                    Memory.getInstance().getConfig().getString("MySQL.Username"),
                     Memory.getInstance().getConfig().getString("MySQL.Password")
             );
         }

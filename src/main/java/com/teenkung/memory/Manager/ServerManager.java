@@ -1,22 +1,15 @@
 package com.teenkung.memory.Manager;
 
-import com.teenkung.memory.EventRegister.ServerBoostEndEvent;
-import com.teenkung.memory.EventRegister.ServerBoostEvent;
 import com.teenkung.memory.Memory;
-import com.teenkung.memory.Regeneration.Regeneration;
-import com.teenkung.memory.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitTask;
+
+import static com.teenkung.memory.Memory.colorize;
 
 public class ServerManager {
-
-    public static BukkitTask serverCountdownBooster = null;
     private static Double serverMultiplier;
     private static Long serverDuration;
     private static Long serverTimeout;
@@ -33,84 +26,48 @@ public class ServerManager {
 
     }
 
-    public static Double getServerBoosterMultiplier() {
-        return serverMultiplier;
-    }
-
-    public static Long getServerBoosterDuration() {
-        return serverDuration;
-    }
-
-    public static Long getServerBoosterTimeout() {
-        return serverTimeout;
-    }
-
-    public static void setServerBooster(Double multiplier, Long duration) {
-        double old_multiplier = getServerBoosterMultiplier();
-        long old_duration = getServerBoosterDuration();
-        long old_timeout = getServerBoosterTimeout();
-        long timeout = Memory.getCurrentUnixSeconds() + duration;
-
+    public static void setBooster(Double multiplier, Long duration) {
         serverMultiplier = multiplier;
         serverDuration = duration;
-        serverTimeout = timeout;
+        serverTimeout = Memory.getCurrentUnixSeconds()+duration;
 
-        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new ServerBoostEvent(multiplier, duration, timeout, old_multiplier, old_duration, old_timeout)));
+        Bukkit.broadcastMessage(colorize("sM: "+serverMultiplier+" sD: "+serverDuration+" sT: "+serverTimeout));
 
-        updateServerBooster(multiplier, duration, timeout);
-        countdownRemoveServerBooster(duration);
-
-        Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                Regeneration.updatePlayerRegenTask(player);
-            }
-        });
+        saveData();
     }
 
-    private static void updateServerBooster(Double multiplier, Long duration, Long timeout) {
-        World world = Bukkit.getWorlds ().get(0);
+    public static void startTimer() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
+            if (Memory.getCurrentUnixSeconds() >= serverTimeout && serverMultiplier != 1) {
+                serverMultiplier = 1D;
+                serverDuration = 0L;
+                serverTimeout = Memory.getCurrentUnixSeconds()-1;
+                saveData();
+                Bukkit.broadcastMessage("§bMemory §7| §aServer multiplier has been reset.");
+            }
+        }, 0, 20);
+    }
+
+    public static void saveData() {
+        World world = Bukkit.getWorlds().get(0);
         PersistentDataContainer serverContainer = world.getPersistentDataContainer();
         NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
         NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
         NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-        serverContainer.set(multi, PersistentDataType.DOUBLE, multiplier);
-        serverContainer.set(dura, PersistentDataType.LONG, duration);
-        serverContainer.set(out, PersistentDataType.LONG, timeout);
+        serverContainer.set(multi, PersistentDataType.DOUBLE, 1D);
+        serverContainer.set(dura, PersistentDataType.LONG, 0L);
+        serverContainer.set(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
     }
 
-    public static boolean areNowBoosting() {
-        return serverTimeout > Memory.getCurrentUnixSeconds();
+    public static double getMultiplier() {
+        return serverMultiplier;
     }
 
-    public static void resetData() {
-        World world = Bukkit.getWorlds().get(0);
-        PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-        Utils.removeContainer(serverContainer);
-
-        serverMultiplier = 1D;
-        serverDuration = 0L;
-        serverTimeout = Memory.getCurrentUnixSeconds()-1;
+    public static long getDuration() {
+        return serverDuration;
     }
 
-    public static void countdownRemoveServerBooster(long duration) {
-        if (serverCountdownBooster != null) {
-            serverCountdownBooster.cancel();
-        }
-
-        serverCountdownBooster = Bukkit.getScheduler().runTaskLaterAsynchronously(Memory.getInstance(), () -> {
-
-            Bukkit.broadcastMessage(ChatColor.GOLD+"SERVER MANAGER | SERVER BOOSTER ENDED");
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new ServerBoostEndEvent(getServerBoosterMultiplier(), getServerBoosterDuration(), getServerBoosterTimeout())));
-
-            resetData();
-
-            Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    Regeneration.updatePlayerRegenTask(player);
-                }
-            });
-
-        }, 20L * duration);
+    public static long getTimeOut() {
+        return serverTimeout;
     }
 }

@@ -1,12 +1,7 @@
 package com.teenkung.memory.Manager;
 
 import com.teenkung.memory.ConfigLoader;
-import com.teenkung.memory.EventRegister.MemoryChangeEvent;
-import com.teenkung.memory.EventRegister.PlayerBoostEndEvent;
-import com.teenkung.memory.EventRegister.PlayerBoostEvent;
 import com.teenkung.memory.Memory;
-import com.teenkung.memory.Regeneration.Regeneration;
-import com.teenkung.memory.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -18,6 +13,9 @@ import org.bukkit.scheduler.BukkitTask;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import static com.teenkung.memory.Memory.colorize;
+
 @SuppressWarnings("unused")
 public class PlayerDataManager {
 
@@ -29,12 +27,12 @@ public class PlayerDataManager {
     private int RLevel;
     private int MLevel;
     private long lastRegenerationTime;
-    private long leftOverTime;
+    private final long leftOverTime;
     private final PersistentDataContainer container;
-    private BukkitTask countdownBooster;
     private Double multiplier;
     private Long duration;
     private Long timeout;
+    private Long p;
 
 
     /**
@@ -48,7 +46,6 @@ public class PlayerDataManager {
         this.loginTime = Memory.getCurrentUnixSeconds();
         this.leftOverTime = 0;
         this.container = player.getPersistentDataContainer();
-        this.countdownBooster = null;
         Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
             try {
                 PreparedStatement statement = Memory.getConnection().prepareStatement("INSERT INTO Memory (UUID, LeaveUnix, RLevel, MLevel, CurrentAmount, BypassUntil, LastRegen)" +
@@ -155,12 +152,6 @@ public class PlayerDataManager {
     public long getLeftOverTime() { return leftOverTime; }
 
     /**
-     * Request Countdown task of player booster
-     * @return Countdown boost Task
-     */
-    public BukkitTask getCountdownBooster() { return countdownBooster; }
-
-    /**
      * Request player's boost multiplier
      * @return Boost multiplier
      */
@@ -194,116 +185,12 @@ public class PlayerDataManager {
         NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
         long timeout = Memory.getCurrentUnixSeconds() + duration;
 
-        // Countdown Boost
-        countdownBooster(duration);
-
         container.set(multi, PersistentDataType.DOUBLE, multiplier);
         container.set(dura, PersistentDataType.LONG, duration);
         container.set(out, PersistentDataType.LONG, timeout);
         this.multiplier = multiplier;
         this.duration = duration;
         this.timeout = timeout;
-
-        Regeneration.updatePlayerRegenTask(player);
-
-        /*
-        double period_remain = Math.max(old_multiplied_period - (Memory.getCurrentUnixSeconds() - getLastRegenerationTime()), 0);
-        long full_period = ConfigLoader.getRegenTime(getRegenLevel());
-
-        double boosted_period_remain;
-        double boosted_full_period;
-
-        if (ServerManager.areNowBoosting()) {
-            double server_boost_multiplier = ServerManager.getServerBoosterMultiplier();
-
-            // combine server multiplier and player multiplier
-            double combined_multiplier = server_boost_multiplier + multiplier;
-
-            // calculate remain period with multiplier
-            boosted_period_remain =  (period_remain / combined_multiplier);
-            boosted_full_period =  (full_period / combined_multiplier);
-
-
-        } else {
-            // calculate remain period with multiplier
-            boosted_period_remain =  (period_remain / multiplier);
-            boosted_full_period =  (full_period / multiplier);
-        }
-
-        if (getCurrentMemory() > 0) {
-            Regeneration.addTask(player, boosted_period_remain, boosted_full_period, ServerManager.getServerBoosterMultiplier(), multiplier);
-        }
-
-         */
-
-        Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new PlayerBoostEvent(this, player, multiplier, duration, timeout)));
-
-    }
-
-    public boolean isNowBoosting() {
-
-        return this.timeout > Memory.getCurrentUnixSeconds();
-    }
-
-    public boolean hasBoostingData() {
-
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-        return container.has(multi, PersistentDataType.DOUBLE) && container.has(dura, PersistentDataType.LONG) && container.has(out, PersistentDataType.LONG);
-    }
-
-    public void countdownBooster(long duration) {
-        if (countdownBooster != null) {
-            countdownBooster.cancel();
-        }
-        countdownBooster = Bukkit.getScheduler().runTaskLaterAsynchronously(Memory.getInstance(), () -> {
-
-            player.sendMessage(ChatColor.YELLOW+"PLAYER DATA MANAGER | PLAYER BOOSTER ENDED");
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new PlayerBoostEndEvent(this, player, getBoosterMultiplier(), getBoosterDuration(), getBoosterTimeout())));
-
-            countdownBooster = null;
-
-            resetBooster();
-            Regeneration.updatePlayerRegenTask(player);
-
-            /*
-            double full_period = ConfigLoader.getRegenTime(RLevel);
-            double player_multiplier = getBoosterMultiplier();
-
-            double delay;
-            double period;
-
-            if (ServerManager.areNowBoosting()) {
-
-                double server_multiplier = ServerManager.getServerBoosterMultiplier();
-
-                delay = Math.max((full_period/server_multiplier) - (getBoosterDuration()-(Memory.regenerationTask.get(player).getDelay()) % (full_period/player_multiplier)), 0);
-                period = (full_period/server_multiplier);
-
-            } else {
-
-                delay = Math.max((full_period) - (getBoosterDuration() % (full_period/player_multiplier)), 0);
-                period = full_period;
-
-            }
-            Regeneration.cancelTask(player);
-
-            if (getCurrentMemory() > 0) {
-                Regeneration.addTask(player, delay, period, ServerManager.getServerBoosterMultiplier(), 1.0);
-            } */
-
-
-        }, 20L * duration);
-    }
-
-    public void resetBooster() {
-        Bukkit.broadcastMessage(ChatColor.UNDERLINE+"PLAYER DATA MANAGER | CONTAINER: "+container.toString());
-        Utils.removeContainer(container);
-        multiplier = 1D;
-        duration = 0L;
-        timeout = Memory.getCurrentUnixSeconds()-1;
     }
 
     /**
@@ -346,56 +233,9 @@ public class PlayerDataManager {
     /**
      * Set the current Memory the player currently has
      * @param value the value you want the player to have
-     * @param setRegenTime should the leastRegenerationTime value gets update too?
      */
-    public void setCurrentMemory(int value, boolean setRegenTime) {
-        int oldValue = currentMemory;
+    public void setCurrentMemory(int value) {
         currentMemory = value;
-        if (setRegenTime) {
-            lastRegenerationTime = Memory.getCurrentUnixSeconds();
-        }
-        player.sendMessage("PLAYER DATA MANAGER | OLD VALUE = " + oldValue);
-        player.sendMessage("PLAYER DATA MANAGER | NEW VALUE = " + value);
-        if (value == 0) {
-            Regeneration.cancelTask(player);
-        } else {
-            if (oldValue == 0) {
-
-
-                double period;
-
-                // player's default regen rate
-                double regen_rate = ConfigLoader.getRegenTime(getRegenLevel());
-
-                // if both are boosting
-                if (ServerManager.areNowBoosting() && isNowBoosting()) {
-
-                    period = (regen_rate/(ServerManager.getServerBoosterMultiplier()+ getBoosterMultiplier()));
-
-                    //if player is boosting but server not
-                } else if (isNowBoosting()) {
-
-                    period = (regen_rate/(getBoosterMultiplier()));
-
-                    // if server is boosting but player not
-                } else if (ServerManager.areNowBoosting()) {
-
-                    period = (regen_rate/(ServerManager.getServerBoosterMultiplier()));
-
-                    // if neither are boosting
-                } else {
-
-                    period = regen_rate;
-
-                }
-                Regeneration.addTask(player, period, period, ServerManager.getServerBoosterMultiplier(), getBoosterMultiplier());
-            }
-        }
-
-        // Call event 'MemoryChangeEvent'
-        if (!(oldValue == value)) {
-            Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new MemoryChangeEvent(this, player, oldValue, value)));
-        }
     }
 
     /**
@@ -438,22 +278,29 @@ public class PlayerDataManager {
     /**
      * Save all the Data except logout Time to the MySQL database
      */
-    public void saveDataToMySQL() {
-        Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
-            try {
-                PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET RLevel = ?, MLevel = ?, CurrentAmount = ?, BypassUntil = ?, LastRegen = ? WHERE UUID = ?");
-                statement.setInt(1, RLevel);
-                statement.setInt(2, MLevel);
-                statement.setInt(3, currentMemory);
-                statement.setLong(4, bypassEndTime);
-                statement.setLong(5, lastRegenerationTime);
-                statement.setString(6, player.getUniqueId().toString());
-                statement.executeUpdate();
-                statement.close();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    public void saveDataToMySQL(boolean... async) {
+        boolean isAsync = async.length == 0 || async[0];
+        if (isAsync) {
+            Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), this::saveAllData);
+        } else {
+            saveAllData();
+        }
+    }
+
+    private void saveAllData() {
+        try {
+            PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET RLevel = ?, MLevel = ?, CurrentAmount = ?, BypassUntil = ?, LastRegen = ? WHERE UUID = ?");
+            statement.setInt(1, RLevel);
+            statement.setInt(2, MLevel);
+            statement.setInt(3, currentMemory);
+            statement.setLong(4, bypassEndTime);
+            statement.setLong(5, lastRegenerationTime);
+            statement.setString(6, player.getUniqueId().toString());
+            statement.executeUpdate();
+            statement.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -461,41 +308,69 @@ public class PlayerDataManager {
      * the Memory will get modified based on the Offline Calculation after thus task performed
      */
     public void performOfflineCalculation() {
+        long def = ConfigLoader.getRegenTime(RLevel);
+        double playerMultiplier = getBoosterMultiplier();
 
-        double player_boost_timeout_time = getBoosterTimeout();
-        double last_regen_time = getLastRegenerationTime();
-        double regen_rate = ConfigLoader.getRegenTime(RLevel);
-        double player_boost_multiplier = getBoosterMultiplier();
-        double player_login_time = Memory.getCurrentUnixSeconds();
-        int decreaseAmount;
+        long logoutDuration = Memory.getCurrentUnixSeconds() - logoutTime;
+        long boostDuration = Math.min(timeout - logoutTime, 0);
+        long unBoostDuration = logoutDuration - boostDuration;
 
-        player.sendMessage("PLAYER DATA MANAGER | PLAYER BOOST TIMEOUT TIME: "+(player_boost_timeout_time));
-        player.sendMessage("PLAYER DATA MANAGER | LAST REGEN TIME: "+(long)last_regen_time);
-        player.sendMessage("PLAYER DATA MANAGER | REGEN RATE: "+(regen_rate));
-        player.sendMessage("PLAYER DATA MANAGER | PLAYER BOOST MULTIPLIER: "+(player_boost_multiplier));
-        player.sendMessage("PLAYER DATA MANAGER | PLAYER LOGIN TIME: "+(long)player_login_time);
 
-        if (isNowBoosting()) {
 
-            decreaseAmount =  (int) ((player_login_time - last_regen_time) / (regen_rate / player_boost_multiplier));
-            leftOverTime = (long) ((player_login_time - last_regen_time) % (regen_rate / player_boost_multiplier));
+    }
 
-        } else {
-            if (hasBoostingData()) {
+    public void calculatePeriod(boolean rolldownBoost, boolean includeLeftover) {
+        Bukkit.broadcastMessage(colorize("Stated Calculation"));
+        long def = ConfigLoader.getRegenTime(RLevel);
 
-                double no_boost_time_duration = (player_login_time - player_boost_timeout_time) + ((player_boost_timeout_time - last_regen_time) % (regen_rate / player_boost_multiplier));
+        double playerMultiplier = 1;
+        long playerDuration = 0;
+        double serverMultiplier = 1;
+        long serverDuration = 0;
 
-                decreaseAmount = (int) (((player_boost_timeout_time - last_regen_time) / (regen_rate / player_boost_multiplier)) + (no_boost_time_duration/regen_rate));
-                leftOverTime = (long) (no_boost_time_duration % regen_rate);
-
-            } else {
-                decreaseAmount = (int) ((player_login_time - last_regen_time) / regen_rate);
-                leftOverTime = (long) ((player_login_time - last_regen_time) % regen_rate);
-            }
+        if (timeout >= Memory.getCurrentUnixSeconds()) {
+            playerMultiplier = getBoosterMultiplier();
+            playerDuration = Math.min(getBoosterDuration(), def);
         }
 
-        player.sendMessage("PLAYER DATA MANAGER | OFFLINE CALCULATION: "+(decreaseAmount));
-        setCurrentMemory(Math.max(currentMemory - decreaseAmount, 0), true);
+        if (ServerManager.getTimeOut() >= Memory.getCurrentUnixSeconds()) {
+            serverMultiplier = ServerManager.getMultiplier();
+            serverDuration = Math.min(ServerManager.getDuration(), def);
+        }
+        //Bukkit.broadcastMessage(colorize("&dpM: " + playerMultiplier + " pD: " + playerDuration + " sM: " + serverMultiplier + " sD: " + serverDuration));
+        //Bukkit.broadcastMessage(colorize("&dtm: " + timeout + " ctm: " + Memory.getCurrentUnixSeconds() + " sctm: " + ServerManager.getTimeOut()));
+
+
+        double t1 = def - Math.max(serverDuration, playerDuration);
+        double t2 = Math.max(playerDuration-serverDuration, 0);
+        double t3 = Math.max(serverDuration-playerDuration, 0);
+        double t4 = Math.min(serverDuration, playerDuration);
+        long t = Math.round(t1 + (t2/playerMultiplier) + (t3/serverMultiplier) + (t4/(playerMultiplier+serverMultiplier)));
+
+        p = Memory.getCurrentUnixSeconds() + t;
+        if (rolldownBoost) {
+            long a = (duration-def)+playerDuration - t;
+            //Bukkit.broadcastMessage(colorize("&e"+(duration-def)+" " + playerDuration + " " + t));
+            setBooster(multiplier, Math.max(a, 0));
+            //Bukkit.broadcastMessage(colorize("&b"+Math.max(a, 0)));
+        }
+
+    }
+
+    public void startGenerationTask() {
+        BukkitTask task = Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
+            if (player.isOnline()) {
+                if (p == null) {
+                    calculatePeriod(false, true);
+                } else if (p <= Memory.getCurrentUnixSeconds()) {
+                    if (currentMemory > 0) {
+                        currentMemory--;
+                        calculatePeriod(true, false);
+                    }
+                }
+                //Bukkit.broadcastMessage("p = " + p + " | " + Memory.getCurrentUnixSeconds());
+            }
+        }, 0, 20);
     }
 
 }

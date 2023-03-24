@@ -5,7 +5,6 @@ import com.teenkung.memory.Manager.PlayerDataManager;
 import com.teenkung.memory.Manager.PlayerManager;
 import com.teenkung.memory.Manager.ServerManager;
 import com.teenkung.memory.Memory;
-import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -66,15 +65,13 @@ public class CommandHandler implements CommandExecutor {
                             PlayerDataManager manager = PlayerManager.getDataManager(target);
                             if (args[2].equalsIgnoreCase("Rate")) {
                                 manager.setRegenLevel(manager.getRegenLevel() + value);
-                                Regeneration.updatePlayerRegenTask(target);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Regeneration Level")
                                         .replaceAll("<value>", String.valueOf(value))
                                 ));
                             } else if (args[2].equalsIgnoreCase("Capacity")) {
-                                manager.setCurrentMemory(manager.getMaxCapacityLevel() + value, false);
-                                Regeneration.updatePlayerRegenTask(target);
+                                manager.setCurrentMemory(manager.getMaxCapacityLevel() + value);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Upgrade.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Capacity Level")
@@ -107,7 +104,6 @@ public class CommandHandler implements CommandExecutor {
                             PlayerDataManager manager = PlayerManager.getDataManager(target);
                             if (args[2].equalsIgnoreCase("Rate")) {
                                 manager.setRegenLevel(value);
-                                Regeneration.updatePlayerRegenTask(target);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Regeneration Level")
@@ -115,14 +111,13 @@ public class CommandHandler implements CommandExecutor {
                                 ));
                             } else if (args[2].equalsIgnoreCase("Capacity")) {
                                 manager.setMaxCapacityLevel(value);
-                                Regeneration.updatePlayerRegenTask(target);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Capacity Level")
                                         .replaceAll("<value>", String.valueOf(value))
                                 ));
                             } else if (args[2].equalsIgnoreCase("CurrentMemory")) {
-                                manager.setCurrentMemory(value, false);
+                                manager.setCurrentMemory(value);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Set.feedback", true)
                                         .replaceAll("<player>", target.getName())
                                         .replaceAll("<modifier>", "Current Memory")
@@ -157,14 +152,14 @@ public class CommandHandler implements CommandExecutor {
                                     if (Memory.getCurrentUnixSeconds() <= manager.getBypassEndTime()) {
                                         return false;
                                     } else {
-                                        manager.setCurrentMemory(manager.getCurrentMemory() + amount, false);
+                                        manager.setCurrentMemory(manager.getCurrentMemory() + amount);
                                         sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.feedback", true)
                                                 .replaceAll("<player>", target.getName())
                                                 .replaceAll("<value>", String.valueOf(manager.getCurrentMemory()))
                                         ));
                                     }
                                 } else {
-                                    manager.setCurrentMemory(manager.getCurrentMemory() + amount, false);
+                                    manager.setCurrentMemory(manager.getCurrentMemory() + amount);
                                     sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Give.feedback", true)
                                             .replaceAll("<player>", target.getName())
                                             .replaceAll("<value>", String.valueOf(manager.getCurrentMemory()))
@@ -229,9 +224,9 @@ public class CommandHandler implements CommandExecutor {
                                 Double multiplier = Double.parseDouble(args[2]);
                                 Long duration = Long.parseLong(args[3]);
 
-                                ServerManager.setServerBooster(multiplier, duration);
+                                ServerManager.setBooster(multiplier, duration);
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-server", true)
-                                        .replaceAll("<modifier>", String.valueOf(multiplier))
+                                        .replaceAll("<multiplier>", String.valueOf(multiplier))
                                         .replaceAll("<duration>", String.valueOf(duration))
                                 ));
 
@@ -272,7 +267,7 @@ public class CommandHandler implements CommandExecutor {
                                 //memory boost stop server
 
                                 sender.sendMessage("");
-                                ServerManager.setServerBooster(1D, 0L);
+                                ServerManager.setBooster(1D, 0L);
 
                                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Boost.feedback-stop-server", true)));
 
@@ -340,28 +335,19 @@ public class CommandHandler implements CommandExecutor {
                     PlayerDataManager data = PlayerManager.getDataManager(player);
                     player.sendMessage(ChatColor.GOLD+"MEMORY: "+data.getCurrentMemory());
                     player.sendMessage(ChatColor.GOLD+"REGENERATION TASK: "+Memory.regenerationTask.get(player));
-                    player.sendMessage(ChatColor.GOLD+"COUNTDOWN BOOSTER: "+data.getCountdownBooster());
-                    player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+ServerManager.getServerBoosterMultiplier());
+                    player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+ServerManager.getMultiplier());
                     player.sendMessage(ChatColor.GOLD+"PLAYER MULTIPLIER: "+data.getBoosterMultiplier());
-                    player.sendMessage(ChatColor.RED+"PLAYER IS BOOSTING: "+data.isNowBoosting());
-                    player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+data.getRegenerationTask().getServerMultiplier());
-                    player.sendMessage(ChatColor.GOLD+"PLAYER MULTIPLIER: "+data.getRegenerationTask().getPlayerMultiplier());
                     player.sendMessage(ChatColor.GOLD+"PLAYER BOOST DURATION: "+Memory.getDurationFormat(data.getBoosterDuration()));
                     player.sendMessage(ChatColor.GOLD+"PLAYER BOOST TIMEOUT: "+Memory.getTimeFormat(data.getBoosterTimeout()));
 
                     NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
                     NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
                     NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | MULTI: "+data.getContainer().has(multi, PersistentDataType.DOUBLE));
-                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | DURA: "+data.getContainer().has(dura, PersistentDataType.LONG));
-                    player.sendMessage(ChatColor.DARK_AQUA+"REGENERATION | OUT: "+data.getContainer().has(out, PersistentDataType.LONG));
-
                     World world = Bukkit.getWorlds().get(0);
                     PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-                    player.sendMessage(ChatColor.GRAY+"REGENERATION | MULTI: "+serverContainer.has(multi, PersistentDataType.DOUBLE));
-                    player.sendMessage(ChatColor.GRAY+"REGENERATION | DURA: "+serverContainer.has(dura, PersistentDataType.LONG));
-                    player.sendMessage(ChatColor.GRAY+"REGENERATION | OUT: "+serverContainer.has(out, PersistentDataType.LONG));
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | MULTI: "+serverContainer.get(multi, PersistentDataType.DOUBLE));
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | DURA: "+serverContainer.get(dura, PersistentDataType.LONG));
+                    player.sendMessage(ChatColor.GRAY+"REGENERATION | OUT: "+serverContainer.get(out, PersistentDataType.LONG));
                 }
 
 
@@ -376,14 +362,10 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equalsIgnoreCase("reload")) {
                 long start = System.currentTimeMillis();
                 ConfigLoader.reloadConfig();
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    Regeneration.updatePlayerRegenTask(player);
-                }
                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Reload.feedback", true).replaceAll("<ms>", String.valueOf(System.currentTimeMillis() - start))));
 
             } else if (args[0].equalsIgnoreCase("updateTask")) {
                 assert sender instanceof Player;
-                Regeneration.updatePlayerRegenTask((Player) sender);
             } else {
                 for (String s : Memory.getInstance().getConfig().getStringList("Messages.Command.Help")) {
                     sender.sendMessage(colorize(s));

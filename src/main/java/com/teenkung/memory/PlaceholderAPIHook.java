@@ -43,16 +43,16 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
             } else if (params.equalsIgnoreCase("capacityLevelDisplay")) {
                 return ConfigLoader.getDisplay(manager.getMaxCapacityLevel());
             } else if (params.equalsIgnoreCase("getRegenerationRate")) {
-                return String.valueOf(ConfigLoader.getRegenTime(manager.getRegenLevel()) / (manager.getBoosterMultiplier()+ ServerManager.getServerBoosterMultiplier()));
+                return String.valueOf(ConfigLoader.getRegenTime(manager.getRegenLevel()) / (manager.getBoosterMultiplier()+ ServerManager.getMultiplier()));
             } else if (params.equalsIgnoreCase("getMaxCapacity")) {
                 return String.valueOf(ConfigLoader.getMax(manager.getMaxCapacityLevel()));
             } else if (params.equalsIgnoreCase("getTimeLeft")) {
                 if (manager.getLastRegenerationTime() + ConfigLoader.getRegenTime(manager.getRegenLevel()) < Memory.getCurrentUnixSeconds()) { return "0"; }
 
                 long time = ConfigLoader.getRegenTime(manager.getRegenLevel()) - (Memory.getCurrentUnixSeconds() - manager.getLastRegenerationTime());
-                double serverBoost = ServerManager.getServerBoosterMultiplier();
+                double serverBoost = ServerManager.getMultiplier();
                 double playerBoost = manager.getBoosterMultiplier();
-                long serverBoostTime = Memory.getCurrentUnixSeconds() - ServerManager.getServerBoosterDuration();
+                long serverBoostTime = Memory.getCurrentUnixSeconds() - ServerManager.getDuration();
                 long playerBoostTime = Memory.getCurrentUnixSeconds() - manager.getBoosterDuration();
 
                 if (serverBoostTime < Memory.getCurrentUnixSeconds()) { serverBoost = 1; }

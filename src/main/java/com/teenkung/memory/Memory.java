@@ -6,11 +6,9 @@ import com.teenkung.memory.Commands.CommandTabCompleter;
 import com.teenkung.memory.EventListener.JoinEvent;
 import com.teenkung.memory.EventListener.QuitEvent;
 import com.teenkung.memory.Manager.*;
-import com.teenkung.memory.Regeneration.Regeneration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -60,14 +58,14 @@ public final class Memory extends JavaPlugin {
         Bukkit.getScheduler().runTaskLater(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerManager.addPlayer(player);
-
-                Bukkit.getScheduler().runTaskLater(this, ()-> Regeneration.updatePlayerRegenTask(player), 20);
+                //Delay 1 second waiting for another plugin and this plugin to set all things
+                Bukkit.getScheduler().runTaskLater(Memory.getInstance(), () -> {
+                    PlayerDataManager playerData = PlayerManager.getDataManager(player);
+                    playerData.performOfflineCalculation();
+                    playerData.startGenerationTask();
+                }, 20);
             }
         }, 30);
-
-        if (ServerManager.areNowBoosting()) {
-            ServerManager.countdownRemoveServerBooster(Math.max(ServerManager.getServerBoosterTimeout() - getCurrentUnixSeconds(), 0));
-        }
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -76,6 +74,7 @@ public final class Memory extends JavaPlugin {
                     manager.saveDataToMySQL();
                 }
             }
+            ServerManager.startTimer();
         }, 100, 300*20);
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -87,10 +86,10 @@ public final class Memory extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        Regeneration.cancelAllTasks();
-        Bukkit.getScheduler().getPendingTasks().stream()
-                .filter(task -> task.getOwner().equals(this))
-                .forEach(BukkitTask::cancel);
+        for (Player player : PlayerManager.getMap().keySet()) {
+            PlayerDataManager manager = PlayerManager.getDataManager(player);
+            manager.saveDataToMySQL(false);
+        }
         sql.Disconnect();
     }
 
