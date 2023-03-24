@@ -334,7 +334,6 @@ public class CommandHandler implements CommandExecutor {
                 if (sender instanceof Player player) {
                     PlayerDataManager data = PlayerManager.getDataManager(player);
                     player.sendMessage(ChatColor.GOLD+"MEMORY: "+data.getCurrentMemory());
-                    player.sendMessage(ChatColor.GOLD+"REGENERATION TASK: "+Memory.regenerationTask.get(player));
                     player.sendMessage(ChatColor.GOLD+"SERVER MULTIPLIER: "+ServerManager.getMultiplier());
                     player.sendMessage(ChatColor.GOLD+"PLAYER MULTIPLIER: "+data.getBoosterMultiplier());
                     player.sendMessage(ChatColor.GOLD+"PLAYER BOOST DURATION: "+Memory.getDurationFormat(data.getBoosterDuration()));
@@ -351,21 +350,11 @@ public class CommandHandler implements CommandExecutor {
                 }
 
 
-
-            } else if (args[0].equalsIgnoreCase("serverDebug")) {
-                sender.sendMessage("REGENERATION TASK MAP: "+Memory.regenerationTask);
-
-
-
-
-
             } else if (args[0].equalsIgnoreCase("reload")) {
                 long start = System.currentTimeMillis();
                 ConfigLoader.reloadConfig();
                 sender.sendMessage(colorize(ConfigLoader.getMessage("Command.Reload.feedback", true).replaceAll("<ms>", String.valueOf(System.currentTimeMillis() - start))));
 
-            } else if (args[0].equalsIgnoreCase("updateTask")) {
-                assert sender instanceof Player;
             } else {
                 for (String s : Memory.getInstance().getConfig().getStringList("Messages.Command.Help")) {
                     sender.sendMessage(colorize(s));

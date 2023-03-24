@@ -47,23 +47,9 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
             } else if (params.equalsIgnoreCase("getMaxCapacity")) {
                 return String.valueOf(ConfigLoader.getMax(manager.getMaxCapacityLevel()));
             } else if (params.equalsIgnoreCase("getTimeLeft")) {
-                if (manager.getLastRegenerationTime() + ConfigLoader.getRegenTime(manager.getRegenLevel()) < Memory.getCurrentUnixSeconds()) { return "0"; }
-
-                long time = ConfigLoader.getRegenTime(manager.getRegenLevel()) - (Memory.getCurrentUnixSeconds() - manager.getLastRegenerationTime());
-                double serverBoost = ServerManager.getMultiplier();
-                double playerBoost = manager.getBoosterMultiplier();
-                long serverBoostTime = Memory.getCurrentUnixSeconds() - ServerManager.getDuration();
-                long playerBoostTime = Memory.getCurrentUnixSeconds() - manager.getBoosterDuration();
-
-                if (serverBoostTime < Memory.getCurrentUnixSeconds()) { serverBoost = 1; }
-                if (playerBoostTime < Memory.getCurrentUnixSeconds()) { playerBoost = 1; }
-
-                //Equation: R/((B+b)/(R/min(S+s, R)))
-                return Double.valueOf(time/((playerBoost+serverBoost)/(time/Float.valueOf(Math.min(serverBoostTime + playerBoostTime, time)).doubleValue()))).toString();
-
-
+                return String.valueOf(manager.getNextPerionIn());
             } else if (params.equalsIgnoreCase("getTotalTimeLeft")) {
-
+                return String.valueOf(manager.getFillTime());
             }
         } else {
             return null;

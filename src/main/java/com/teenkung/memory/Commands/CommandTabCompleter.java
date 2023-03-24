@@ -50,8 +50,6 @@ public class CommandTabCompleter implements TabCompleter {
             result.add("setBypass");
             result.add("stopBypass");
             result.add("debug");
-            result.add("debugServer");
-            result.add("updateTask");
 
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("upgrade") || args[0].equalsIgnoreCase("give")) {
@@ -106,11 +104,7 @@ public class CommandTabCompleter implements TabCompleter {
             }
 
         } else if (args.length == 4) {
-            if (args[0].equalsIgnoreCase("upgrade")) {
-                for (int i = 1; i <= ConfigLoader.getLevelList().size(); i++) {
-                    result.add(String.valueOf(i));
-                }
-            } else if (args[0].equalsIgnoreCase("set")) {
+            if (args[0].equalsIgnoreCase("set")) {
                 if (args[2].equalsIgnoreCase("CurrentMemory")) {
                     for (int i = 0; i <= 10; i++) {
                         result.add(String.valueOf(i));

@@ -7,8 +7,6 @@ import org.bukkit.World;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import static com.teenkung.memory.Memory.colorize;
-
 public class ServerManager {
     private static Double serverMultiplier;
     private static Long serverDuration;
@@ -31,7 +29,7 @@ public class ServerManager {
         serverDuration = duration;
         serverTimeout = Memory.getCurrentUnixSeconds()+duration;
 
-        Bukkit.broadcastMessage(colorize("sM: "+serverMultiplier+" sD: "+serverDuration+" sT: "+serverTimeout));
+        //Bukkit.broadcastMessage(colorize("sM: "+serverMultiplier+" sD: "+serverDuration+" sT: "+serverTimeout));
 
         saveData();
     }
@@ -43,7 +41,7 @@ public class ServerManager {
                 serverDuration = 0L;
                 serverTimeout = Memory.getCurrentUnixSeconds()-1;
                 saveData();
-                Bukkit.broadcastMessage("§bMemory §7| §aServer multiplier has been reset.");
+                //Bukkit.broadcastMessage("§bMemory §7| §aServer multiplier has been reset.");
             }
         }, 0, 20);
     }

@@ -14,14 +14,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Objects;
 
 public final class Memory extends JavaPlugin {
 
     private static Memory instance;
 
-    public static HashMap<Player, RegenerationTaskManager> regenerationTask = new HashMap<>();
     private static MySQLManager sql;
     @Override
     public void onEnable() {
@@ -61,7 +59,6 @@ public final class Memory extends JavaPlugin {
                 //Delay 1 second waiting for another plugin and this plugin to set all things
                 Bukkit.getScheduler().runTaskLater(Memory.getInstance(), () -> {
                     PlayerDataManager playerData = PlayerManager.getDataManager(player);
-                    playerData.performOfflineCalculation();
                     playerData.startGenerationTask();
                 }, 20);
             }

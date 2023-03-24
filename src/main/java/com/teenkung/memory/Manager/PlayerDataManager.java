@@ -3,7 +3,6 @@ package com.teenkung.memory.Manager;
 import com.teenkung.memory.ConfigLoader;
 import com.teenkung.memory.Memory;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -13,8 +12,6 @@ import org.bukkit.scheduler.BukkitTask;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import static com.teenkung.memory.Memory.colorize;
 
 @SuppressWarnings("unused")
 public class PlayerDataManager {
@@ -27,7 +24,7 @@ public class PlayerDataManager {
     private int RLevel;
     private int MLevel;
     private long lastRegenerationTime;
-    private final long leftOverTime;
+    private long leftOverTime;
     private final PersistentDataContainer container;
     private Double multiplier;
     private Long duration;
@@ -58,7 +55,6 @@ public class PlayerDataManager {
                 statement.setLong(4, Memory.getCurrentUnixSeconds());
                 statement.setLong(5, Memory.getCurrentUnixSeconds());
                 statement.setString(6, player.getUniqueId().toString());
-                System.out.println(statement);
                 statement.executeUpdate();
                 statement.close();
 
@@ -80,8 +76,8 @@ public class PlayerDataManager {
                 NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Duration");
                 NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
 
-                Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | HAVE MEMORY PLAYER MULTIPLIER: " + container.has(multi, PersistentDataType.DOUBLE));
-                Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | MEMORY PLAYER MULTIPLIER: " + container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D));
+                //Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | HAVE MEMORY PLAYER MULTIPLIER: " + container.has(multi, PersistentDataType.DOUBLE));
+                //Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | MEMORY PLAYER MULTIPLIER: " + container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D));
                 this.multiplier = container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
                 this.duration = container.getOrDefault(dura, PersistentDataType.LONG, 0L);
                 this.timeout = container.getOrDefault(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
@@ -91,9 +87,6 @@ public class PlayerDataManager {
             }
         });
     }
-
-
-    public RegenerationTaskManager getRegenerationTask() { return Memory.regenerationTask.get(player); }
 
     /**
      * Request a player class object from this class
@@ -258,21 +251,28 @@ public class PlayerDataManager {
     }
     /**
      * Set the leave time unix of player (ONLY USE WITH PLAYER QUIT EVENT)
-     * @param time The Unix time you want to set
      */
-    public void setLeaveTime(Long time) {
-        logoutTime = Memory.getCurrentUnixSeconds() + time;
-        Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
-            try {
-                PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET LeaveUnix = ? WHERE UUID = ?");
-                statement.setLong(1, logoutTime);
-                statement.setString(2, player.getUniqueId().toString());
-                statement.executeUpdate();
-                statement.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
+    public void setLeaveTime(boolean... async) {
+        logoutTime = Memory.getCurrentUnixSeconds();
+        boolean isAsync = async.length == 0 || async[0];
+        if (isAsync) {
+            Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), this::saveLeaveTime);
+        } else {
+            saveLeaveTime();
+        }
+    }
+
+    private void saveLeaveTime() {
+        try {
+            Bukkit.broadcastMessage(String.valueOf(logoutTime));
+            PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET LeaveUnix = ? WHERE UUID = ?");
+            statement.setLong(1, logoutTime);
+            statement.setString(2, player.getUniqueId().toString());
+            statement.executeUpdate();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -312,15 +312,24 @@ public class PlayerDataManager {
         double playerMultiplier = getBoosterMultiplier();
 
         long logoutDuration = Memory.getCurrentUnixSeconds() - logoutTime;
-        long boostDuration = Math.min(timeout - logoutTime, 0);
+        long boostDuration = Math.max(timeout - logoutTime, 0);
         long unBoostDuration = logoutDuration - boostDuration;
 
+        long calcDuration = Math.round((boostDuration*playerMultiplier) + unBoostDuration);
+        int amount = Long.valueOf(calcDuration/def).intValue();
 
+        leftOverTime = calcDuration%def;
+
+        if (currentMemory - amount < 0) {
+            currentMemory = 0;
+        } else {
+            currentMemory -= amount;
+        }
 
     }
 
     public void calculatePeriod(boolean rolldownBoost, boolean includeLeftover) {
-        Bukkit.broadcastMessage(colorize("Stated Calculation"));
+        //Bukkit.broadcastMessage(colorize("Stated Calculation"));
         long def = ConfigLoader.getRegenTime(RLevel);
 
         double playerMultiplier = 1;
@@ -337,22 +346,27 @@ public class PlayerDataManager {
             serverMultiplier = ServerManager.getMultiplier();
             serverDuration = Math.min(ServerManager.getDuration(), def);
         }
-        //Bukkit.broadcastMessage(colorize("&dpM: " + playerMultiplier + " pD: " + playerDuration + " sM: " + serverMultiplier + " sD: " + serverDuration));
-        //Bukkit.broadcastMessage(colorize("&dtm: " + timeout + " ctm: " + Memory.getCurrentUnixSeconds() + " sctm: " + ServerManager.getTimeOut()));
-
 
         double t1 = def - Math.max(serverDuration, playerDuration);
         double t2 = Math.max(playerDuration-serverDuration, 0);
         double t3 = Math.max(serverDuration-playerDuration, 0);
         double t4 = Math.min(serverDuration, playerDuration);
+
+        if (includeLeftover) {
+            t1 += leftOverTime;
+        }
+
         long t = Math.round(t1 + (t2/playerMultiplier) + (t3/serverMultiplier) + (t4/(playerMultiplier+serverMultiplier)));
 
         p = Memory.getCurrentUnixSeconds() + t;
         if (rolldownBoost) {
             long a = (duration-def)+playerDuration - t;
-            //Bukkit.broadcastMessage(colorize("&e"+(duration-def)+" " + playerDuration + " " + t));
-            setBooster(multiplier, Math.max(a, 0));
-            //Bukkit.broadcastMessage(colorize("&b"+Math.max(a, 0)));
+            long d = Math.max(a, 0);
+            if (d == 0) {
+                setBooster(1D, d);
+            } else {
+                setBooster(multiplier, d);
+            }
         }
 
     }
@@ -368,9 +382,40 @@ public class PlayerDataManager {
                         calculatePeriod(true, false);
                     }
                 }
-                //Bukkit.broadcastMessage("p = " + p + " | " + Memory.getCurrentUnixSeconds());
             }
+            getFillTime();
         }, 0, 20);
+    }
+
+    public Long getNextPerionIn() { return p - Memory.getCurrentUnixSeconds();}
+    public Long getFillTime() {
+
+        if (currentMemory <= 0) {
+            return 0L;
+        }
+
+        long def = (ConfigLoader.getRegenTime(RLevel).longValue()*currentMemory) - (ConfigLoader.getRegenTime(RLevel)-getNextPerionIn());
+        long serverDuration = 0;
+        long playerDuration = 0;
+        double serverMultiplier = 1;
+        double playerMultiplier = 1;
+
+        if (timeout >= Memory.getCurrentUnixSeconds()) {
+            playerMultiplier = getBoosterMultiplier();
+            playerDuration = Math.min(getBoosterDuration(), def);
+        }
+
+        if (ServerManager.getTimeOut() >= Memory.getCurrentUnixSeconds()) {
+            serverMultiplier = ServerManager.getMultiplier();
+            serverDuration = Math.min(ServerManager.getDuration(), def);
+        }
+
+        long t1 = def - Math.max(serverDuration, playerDuration);
+        long t2 = Math.max(playerDuration-serverDuration, 0);
+        long t3 = Math.max(serverDuration-playerDuration, 0);
+        long t4 = Math.min(serverDuration, playerDuration);
+
+        return Math.round(t1 + (t2/playerMultiplier) + (t3/serverMultiplier) + (t4/(playerMultiplier+serverMultiplier)));
     }
 
 }
