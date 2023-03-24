@@ -4,6 +4,7 @@ import com.teenkung.memory.EventRegister.ServerBoostEndEvent;
 import com.teenkung.memory.EventRegister.ServerBoostEvent;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
+import com.teenkung.memory.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -16,26 +17,32 @@ import org.bukkit.scheduler.BukkitTask;
 public class ServerManager {
 
     public static BukkitTask serverCountdownBooster = null;
+    private static Double serverMultiplier;
+    private static Long serverDuration;
+    private static Long serverTimeout;
 
-    public static Double getServerBoosterMultiplier() {
+    public static void LoadData() {
         World world = Bukkit.getWorlds().get(0);
         PersistentDataContainer serverContainer = world.getPersistentDataContainer();
         NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        return serverContainer.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
+        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
+        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
+        serverMultiplier = serverContainer.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
+        serverDuration = serverContainer.getOrDefault(dura, PersistentDataType.LONG, 0L);
+        serverTimeout = serverContainer.getOrDefault(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
+
+    }
+
+    public static Double getServerBoosterMultiplier() {
+        return serverMultiplier;
     }
 
     public static Long getServerBoosterDuration() {
-        World world = Bukkit.getWorlds().get(0);
-        PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        return serverContainer.getOrDefault(dura, PersistentDataType.LONG, 0L);
+        return serverDuration;
     }
 
     public static Long getServerBoosterTimeout() {
-        World world = Bukkit.getWorlds().get(0);
-        PersistentDataContainer serverContainer = world.getPersistentDataContainer();
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-        return serverContainer.getOrDefault(dura, PersistentDataType.LONG, 0L);
+        return serverTimeout;
     }
 
     public static void setServerBooster(Double multiplier, Long duration) {
@@ -44,9 +51,9 @@ public class ServerManager {
         long old_timeout = getServerBoosterTimeout();
         long timeout = Memory.getCurrentUnixSeconds() + duration;
 
-        serverContainer.set(multi, PersistentDataType.DOUBLE, multiplier);
-        serverContainer.set(dura, PersistentDataType.LONG, duration);
-        serverContainer.set(out, PersistentDataType.LONG, timeout);
+        serverMultiplier = multiplier;
+        serverDuration = duration;
+        serverTimeout = timeout;
 
         Bukkit.getScheduler().runTask(Memory.getInstance(), () -> Bukkit.getPluginManager().callEvent(new ServerBoostEvent(multiplier, duration, timeout, old_multiplier, old_duration, old_timeout)));
 
@@ -58,6 +65,18 @@ public class ServerManager {
                 Regeneration.updatePlayerRegenTask(player);
             }
         });
+    }
+
+    private static void updateServerBooster(Double multiplier, Long duration, Long timeout) {
+        World world = Bukkit.getWorlds ().get(0);
+        PersistentDataContainer serverContainer = world.getPersistentDataContainer();
+        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
+        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
+        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
+
+        serverContainer.set(multi, PersistentDataType.DOUBLE, multiplier);
+        serverContainer.set(dura, PersistentDataType.LONG, duration);
+        serverContainer.set(out, PersistentDataType.LONG, timeout);
     }
 
     public static boolean areNowBoosting() {

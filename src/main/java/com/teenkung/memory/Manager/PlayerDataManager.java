@@ -6,6 +6,7 @@ import com.teenkung.memory.EventRegister.PlayerBoostEndEvent;
 import com.teenkung.memory.EventRegister.PlayerBoostEvent;
 import com.teenkung.memory.Memory;
 import com.teenkung.memory.Regeneration.Regeneration;
+import com.teenkung.memory.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -297,14 +298,12 @@ public class PlayerDataManager {
         }, 20L * duration);
     }
 
-    static void removeContainer(PersistentDataContainer container) {
-        NamespacedKey multi = new NamespacedKey(Memory.getInstance(), "Memory_Server_Multiplier");
-        NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_Server_Duration");
-        NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_Server_Timeout");
-
-        container.remove(multi);
-        container.remove(dura);
-        container.remove(out);
+    public void resetBooster() {
+        Bukkit.broadcastMessage(ChatColor.UNDERLINE+"PLAYER DATA MANAGER | CONTAINER: "+container.toString());
+        Utils.removeContainer(container);
+        multiplier = 1D;
+        duration = 0L;
+        timeout = Memory.getCurrentUnixSeconds()-1;
     }
 
     /**

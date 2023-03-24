@@ -28,6 +28,10 @@ public final class Memory extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
+        //Server Manager Class Loading (First Priority) / Must be done before other data loading
+        ServerManager.LoadData();
+
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         ConfigLoader.loadConfig();
