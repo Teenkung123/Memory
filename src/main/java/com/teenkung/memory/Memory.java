@@ -5,15 +5,22 @@ import com.teenkung.memory.Commands.CommandHandler;
 import com.teenkung.memory.Commands.CommandTabCompleter;
 import com.teenkung.memory.EventListener.JoinEvent;
 import com.teenkung.memory.EventListener.QuitEvent;
-import com.teenkung.memory.Manager.*;
+import com.teenkung.memory.Manager.MySQLManager;
+import com.teenkung.memory.Manager.PlayerDataManager;
+import com.teenkung.memory.Manager.PlayerManager;
+import com.teenkung.memory.Manager.ServerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class Memory extends JavaPlugin {
@@ -32,15 +39,15 @@ public final class Memory extends JavaPlugin {
         saveDefaultConfig();
         ConfigLoader.loadConfig();
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            System.out.println(ConfigLoader.getMessage("MySQL.Connecting", false));
+            System.out.println(colorize(ConfigLoader.getMessage("MySQL.Connecting", false)));
             sql = new MySQLManager();
             try {
                 sql.Connect();
-                System.out.println(ConfigLoader.getMessage("MySQL.Connected", false));
+                System.out.println(colorize(ConfigLoader.getMessage("MySQL.Connected", false)));
                 sql.createTable();
                 sql.startSendDummyData();
             } catch (SQLException e) {
-                System.out.println(ConfigLoader.getMessage("MySQL.Error", false));
+                System.out.println(colorize(ConfigLoader.getMessage("MySQL.Error", false)));
                 Bukkit.getPluginManager().disablePlugin(this);
                 throw new RuntimeException(e);
             }
@@ -96,32 +103,26 @@ public final class Memory extends JavaPlugin {
     public static Long getCurrentUnixSeconds() {
         return System.currentTimeMillis()/1000;
     }
-    public static String getDurationFormat(long unixTimeStampSecond) {
-        Date date = new Date(unixTimeStampSecond * 1000L); // Convert Unix timestamp to Java Date object
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss"); // Define the date format you want
 
-        return dateFormat.format(date);
+    public static String formatUnixTime(long unixTime) {
+        // Convert Unix time to LocalDateTime
+        LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(unixTime), ZoneId.systemDefault());
+
+        // Create a DateTimeFormatter with the Thai Locale and custom format
+        DateTimeFormatter formatter = DateTimeFormatter
+                .ofPattern(instance.getConfig().getString("General.Pattern", "d MMMM YYYY เวลา HH:mm:ss น."), new Locale(instance.getConfig().getString("General.Language", "th"), instance.getConfig().getString("General.Country", "TH")));
+
+        // Format the LocalDateTime using the DateTimeFormatter
+        return dateTime.format(formatter);
+
     }
-
-    public static String getTimeFormat(long unixTimeStampSecond) {
-        Date date = new Date(unixTimeStampSecond * 1000L); // Convert Unix timestamp to Java Date object
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"); // Define the date format you want
-
-        return dateFormat.format(date);
+    public static void replaceList(ArrayList<String> list, ArrayList<String> replacement, String check) {
+        int index = list.indexOf(check);
+        if (index != -1) {
+            list.remove(index);
+            list.addAll(index, replacement);
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

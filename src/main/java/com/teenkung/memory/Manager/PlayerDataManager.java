@@ -13,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static com.teenkung.memory.Memory.colorize;
+
 @SuppressWarnings("unused")
 public class PlayerDataManager {
 
@@ -43,6 +45,7 @@ public class PlayerDataManager {
         this.loginTime = Memory.getCurrentUnixSeconds();
         this.leftOverTime = 0;
         this.container = player.getPersistentDataContainer();
+        this.p = 0L;
         Bukkit.getScheduler().runTaskAsynchronously(Memory.getInstance(), () -> {
             try {
                 PreparedStatement statement = Memory.getConnection().prepareStatement("INSERT INTO Memory (UUID, LeaveUnix, RLevel, MLevel, CurrentAmount, BypassUntil, LastRegen)" +
@@ -76,8 +79,6 @@ public class PlayerDataManager {
                 NamespacedKey dura = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Duration");
                 NamespacedKey out = new NamespacedKey(Memory.getInstance(), "Memory_PlayerBoost_Timeout");
 
-                //Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | HAVE MEMORY PLAYER MULTIPLIER: " + container.has(multi, PersistentDataType.DOUBLE));
-                //Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "PLAYER DATA MANAGER | MEMORY PLAYER MULTIPLIER: " + container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D));
                 this.multiplier = container.getOrDefault(multi, PersistentDataType.DOUBLE, 1D);
                 this.duration = container.getOrDefault(dura, PersistentDataType.LONG, 0L);
                 this.timeout = container.getOrDefault(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
@@ -382,12 +383,20 @@ public class PlayerDataManager {
                         calculatePeriod(true, false);
                     }
                 }
+                if (timeout.equals(Memory.getCurrentUnixSeconds())) {
+                    player.sendMessage(colorize(ConfigLoader.getMessage("Info.Player_Boost_End", true)));
+                    setBooster(1D, 0L);
+                }
+                if (bypassEndTime < Memory.getCurrentUnixSeconds() && bypassEndTime != 0) {
+                    player.sendMessage(colorize(ConfigLoader.getMessage("Info.Bypass_End", true)));
+                    setBypassTime(-Memory.getCurrentUnixSeconds());
+                }
             }
             getFillTime();
         }, 0, 20);
     }
 
-    public Long getNextPerionIn() { return p - Memory.getCurrentUnixSeconds();}
+    public Long getNextPerionIn() { return Math.max(p - Memory.getCurrentUnixSeconds(), 0); }
     public Long getFillTime() {
 
         if (currentMemory <= 0) {

@@ -49,7 +49,6 @@ public class CommandTabCompleter implements TabCompleter {
             result.add("boost");
             result.add("setBypass");
             result.add("stopBypass");
-            result.add("debug");
 
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("upgrade") || args[0].equalsIgnoreCase("give")) {
