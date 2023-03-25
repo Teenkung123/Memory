@@ -21,6 +21,7 @@ public class CommandHandler implements CommandExecutor {
     public boolean onCommand(@SuppressWarnings("NullableProblems") CommandSender sender, @SuppressWarnings("NullableProblems") Command command, @SuppressWarnings("NullableProblems") String label, @SuppressWarnings("NullableProblems") String[] args) {
 
         /*
+
         /memory help
         /memory upgrade [player] [modifier] [value]
         /memory set [player] [modifier] [value]
