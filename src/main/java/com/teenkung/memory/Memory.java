@@ -35,9 +35,12 @@ public final class Memory extends JavaPlugin {
         //Server Manager Class Loading (First Priority) / Must be done before other data loading
         ServerManager.LoadData();
 
+        //Load the configuration files
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         ConfigLoader.loadConfig();
+
+        //Connect to MySQL server
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             System.out.println(colorize(ConfigLoader.getMessage("MySQL.Connecting", false)));
             sql = new MySQLManager();
@@ -60,6 +63,7 @@ public final class Memory extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new JoinEvent(), this);
         Bukkit.getPluginManager().registerEvents(new QuitEvent(), this);
 
+        //Load players data who already online
         Bukkit.getScheduler().runTaskLater(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerManager.addPlayer(player);
@@ -71,6 +75,7 @@ public final class Memory extends JavaPlugin {
             }
         }, 30);
 
+        //Schedule task to save player data to MySQL every 5 minutes
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerDataManager manager = PlayerManager.getDataManager(player);
@@ -81,6 +86,7 @@ public final class Memory extends JavaPlugin {
             ServerManager.startTimer();
         }, 100, 300*20);
 
+        //Register Placeholder API class if Placeholder API is installed
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("PlaceholderAPI")).isEnabled()) {
                 new PlaceholderAPIHook().register();
@@ -90,6 +96,8 @@ public final class Memory extends JavaPlugin {
 
     @Override
     public void onDisable() {
+
+        //Save all player data to MySQL and disconnect from MySQL
         for (Player player : PlayerManager.getMap().keySet()) {
             PlayerDataManager manager = PlayerManager.getDataManager(player);
             manager.saveDataToMySQL(false);
@@ -97,13 +105,38 @@ public final class Memory extends JavaPlugin {
         sql.Disconnect();
     }
 
+    /**
+     * Get the instance of this plugin
+     * @return The instance of this plugin
+     */
     public static Memory getInstance() { return instance; }
+
+    /**
+     * Colorize the String to minecraft color format
+     * @param string the string you want to colorize
+     * @return the colorized string
+     */
     public static String colorize(String string) { return IridiumColorAPI.process(string); }
+
+    /**
+     * Get the MySQLManager class
+     * @return the MySQLManager class
+     */
     public static Connection getConnection() { return sql.getConnection(); }
+
+    /**
+     * get Current time in Unix Seconds
+     * @return Unix Time in Seconds
+     */
     public static Long getCurrentUnixSeconds() {
         return System.currentTimeMillis()/1000;
     }
 
+    /**
+     * Format the Unix Seconds to DateTime
+     * @param unixTime unix seconds you want to format
+     * @return the formatted DateTime
+     */
     public static String formatUnixTime(long unixTime) {
         // Convert Unix time to LocalDateTime
         LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(unixTime), ZoneId.systemDefault());
@@ -116,6 +149,13 @@ public final class Memory extends JavaPlugin {
         return dateTime.format(formatter);
 
     }
+
+    /**
+     * This method will replace an item in the list with another list when check (String) are met
+     * @param list the list you want to replace
+     * @param replacement the list you want to replace with
+     * @param check the string you want to check
+     */
     public static void replaceList(ArrayList<String> list, ArrayList<String> replacement, String check) {
         int index = list.indexOf(check);
         if (index != -1) {

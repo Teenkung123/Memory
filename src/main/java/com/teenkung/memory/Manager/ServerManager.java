@@ -15,6 +15,9 @@ public class ServerManager {
     private static Long serverDuration;
     private static Long serverTimeout;
 
+    /**
+     * Load the Server Booster from PersistentDataContainer of the server
+     */
     public static void LoadData() {
         World world = Bukkit.getWorlds().get(0);
         PersistentDataContainer serverContainer = world.getPersistentDataContainer();
@@ -27,6 +30,11 @@ public class ServerManager {
 
     }
 
+    /**
+     * set the booster of the server
+     * @param multiplier multiplier you want to set (x2, x3, x4, ...)
+     * @param duration duration of the booster (in seconds)
+     */
     public static void setBooster(Double multiplier, Long duration) {
         serverMultiplier = multiplier;
         serverDuration = duration;
@@ -35,6 +43,9 @@ public class ServerManager {
         saveData();
     }
 
+    /**
+     * Start the timer to count the server booster, ONLY USE ONCE when the server start
+     */
     public static void startTimer() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
             if (Memory.getCurrentUnixSeconds() >= serverTimeout && serverMultiplier != 1) {
@@ -47,6 +58,9 @@ public class ServerManager {
         }, 0, 20);
     }
 
+    /**
+     * Save the server booster to PersistentDataContainer of the server
+     */
     public static void saveData() {
         World world = Bukkit.getWorlds().get(0);
         PersistentDataContainer serverContainer = world.getPersistentDataContainer();
@@ -58,14 +72,26 @@ public class ServerManager {
         serverContainer.set(out, PersistentDataType.LONG, Memory.getCurrentUnixSeconds()-1);
     }
 
+    /**
+     * Get the server booster multiplier
+     * @return multiplier of the server booster
+     */
     public static double getMultiplier() {
         return serverMultiplier;
     }
 
+    /**
+     * Get the server booster duration
+     * @return duration of the server booster
+     */
     public static long getDuration() {
         return serverDuration;
     }
 
+    /**
+     * Get the server booster timeout
+     * @return timeout of the server booster
+     */
     public static long getTimeOut() {
         return serverTimeout;
     }

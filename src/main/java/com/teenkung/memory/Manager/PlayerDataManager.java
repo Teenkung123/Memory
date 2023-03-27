@@ -263,6 +263,9 @@ public class PlayerDataManager {
         }
     }
 
+    /**
+     * PRIVATE CLASS, ONLY USE WITH setLeaveTime()
+     */
     private void saveLeaveTime() {
         try {
             PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET LeaveUnix = ? WHERE UUID = ?");
@@ -287,6 +290,9 @@ public class PlayerDataManager {
         }
     }
 
+    /**
+     * PRIVATE CLASS, ONLY USE WITH saveDataToMySQL()
+     */
     private void saveAllData() {
         try {
             PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET RLevel = ?, MLevel = ?, CurrentAmount = ?, BypassUntil = ?, LastRegen = ? WHERE UUID = ?");
@@ -328,6 +334,25 @@ public class PlayerDataManager {
 
     }
 
+    /**
+     * Calculates the next time the player will regenerate Memory in Unix seconds
+     * This method uses the Mathmatical formula of:
+     * <p>
+     * T1+(T2/PlayerMultiplier)+(T3/ServerMultiplier)+(T4/(PlayerMultiplier+ServerMultiplier))
+     * Where:
+     * T1 is the time in seconds that player will not get affected by the boosters
+     * T2 is the time in seconds that player will get affected by the player boosters
+     * T3 is the time in seconds that player will get affected by the server boosters
+     * T4 is the time in seconds that player will get affected by the player and server boosters
+     * <p>
+     * WHERE:
+     * - player and server booster duration must not exceed player's default regeneration rate
+     * <p>
+     * If the rolldownBoost is true, the booster duration will get decreased by the regeneration rate that get from the Mathmatical formula
+     *
+     * @param rolldownBoost should this calculate also reduce the Duration of the booster too or not
+     * @param includeLeftover should this calculate also include the leftover time from the offline calculation
+     */
     public void calculatePeriod(boolean rolldownBoost, boolean includeLeftover) {
         //Bukkit.broadcastMessage(colorize("Stated Calculation"));
         long def = ConfigLoader.getRegenTime(RLevel);
@@ -373,6 +398,10 @@ public class PlayerDataManager {
 
     }
 
+    /**
+     * Start the regeneration Task of the player
+     * ONLY USE ONCE WHEN PLAYER DATA IS LOADED
+     */
     public void startGenerationTask() {
         BukkitTask task = Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
             if (player.isOnline()) {
@@ -397,7 +426,16 @@ public class PlayerDataManager {
         }, 0, 20);
     }
 
+    /**
+     * Get how many seconds are left before player regenerate new memory
+     * @return the time left in seconds
+     */
     public Long getNextPerionIn() { return Math.max(p - Memory.getCurrentUnixSeconds(), 0); }
+
+    /**
+     * Get the time left for the player to fill the memory
+     * @return the time left in seconds
+     */
     public Long getFillTime() {
 
         if (currentMemory <= 0) {

@@ -53,6 +53,9 @@ public class ConfigLoader {
         }
     }
 
+    /**
+     * Reload the configuration then load the configuration again
+     */
     public static void reloadConfig() {
         name = "";
         Memory.getInstance().reloadConfig();
@@ -62,6 +65,9 @@ public class ConfigLoader {
         loadConfig();
     }
 
+    /**
+     * Load the configuration
+     */
     public static void loadConfig() {
         Memory instance = Memory.getInstance();
         FileConfiguration config = instance.getConfig();
