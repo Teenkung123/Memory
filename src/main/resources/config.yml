@@ -38,12 +38,36 @@ Messages:
     Connected: "&aConnected to MySQL server."
     Error: "&4Could not connect to MySQL server. Disabling plugin. . ."
   Info:
+    #Avaiable Placeholders:
+    # PlaceholderAPIs
+    # <memory> - Player's current memory
+    # <max_memory> - Player's Max Memory
+    # <one_regenerate_time> - Time it take to regenerate 1 memory (in datetime)
+    # <one_regenerate_seconds> - Time it take to regenerate 1 memory (in seconds)
+    # <one_regenerate_second> - Time it take to regenerate 1 memory (in seconds left from minute)
+    # <one_regenerate_minute> - Time it take to regenerate 1 memory (in minutes left from hour)
+    # <one_regenerate_hour> - Time it take to regenerate 1 memory (in hours)
+    # <full_regenerate_time> - Time it take to regenerate all memory (in datetime)
+    # <full_regenerate_seconds> - Time it take to regenerate all memory (in seconds)
+    # <full_regenerate_second> - Time it take to regenerate all memory (in seconds left from minute)
+    # <full_regenerate_minute> - Time it take to regenerate all memory (in minutes left from hour)
+    # <full_regenerate_hour> - Time it take to regenerate all memory (in hours)
+    # <player_multiplier> - Player's booster multiplier
+    # <player_duration> - Player's booster duration (in seconds)
+    # <player_end_time> - Player's booster end time (in datetime)
+    # <player_end_second> - Player's booster end time (in seconds)
+    # <server_multiplier> - Server's booster multiplier
+    # <server_duration> - Server's booster duration (in seconds)
+    # <server_end_time> - Server's booster end time (in datetime)
+    # <server_end_second> - Server's booster end time (in seconds)
+    # <bypass_end_time> - Player's bypass end time (in datetime)
+    # <bypass_duration> - Player's bypass duration (in seconds)
     Info:
       - " "
       - "&b✦ <SOLID:66FFCC>You currently have <SOLID:18A774><memory> <SOLID:66FFCC>Memory"
       - "<HIDE_WHEN_0>"
-      - "<HIDE_WHEN_0>&e⌛ &7Your memory will recovered once at &f<one_regenerate_time> &8(or in <one_regenerate_second> seconds)"
-      - "<HIDE_WHEN_0>&c⏳ &7Your memory will fully recovered at &f<full_regenerate_time> &8(or in <full_regenerate_second> seconds)"
+      - "<HIDE_WHEN_0>&e⌛ &7Your memory will recovered once at &f<one_regenerate_time> &8(or in <one_regenerate_seconds> seconds)"
+      - "<HIDE_WHEN_0>&c⏳ &7Your memory will fully recovered at &f<full_regenerate_time> &8(or in <full_regenerate_seconds> seconds)"
       - " "
       - "<player_boost>"
       - " "
@@ -104,12 +128,12 @@ Messages:
       invalid-player: "<GRADIENT:FF0080>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
       invalid-modifier: "<GRADIENT:FF0080>Invalid Arguments: [Modifier] does not exists.</GRADIENT:FF0000>"
       invalid-value: "<GRADIENT:FF0080>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"
-      feedback: "<GRADIENT:66FFCC>Successfully upgraded <player>'s <multiplier></GRADIENT:028A97>"
+      feedback: "<GRADIENT:66FFCC>Successfully upgraded <player>'s <modifier></GRADIENT:028A97>"
     Set:
       invalid-player: "<GRADIENT:FF0080>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
       invalid-modifier: "<GRADIENT:FF0080>Invalid Arguments: [Modifier] does not exists.</GRADIENT:FF0000>"
       invalid-value: "<GRADIENT:FF0080>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"
-      feedback: "<GRADIENT:66FFCC>Successfully set <player>'s <multiplier> to <value></GRADIENT:028A97>"
+      feedback: "<GRADIENT:66FFCC>Successfully set <player>'s <modifier> to <value></GRADIENT:028A97>"
     Give:
       invalid-player: "<GRADIENT:FF0080>Invalid Arguments: [Player] does not exists/online.</GRADIENT:FF0000>"
       invalid-value: "<GRADIENT:FF0080>Invalid Arguments: [Value] does not valid.</GRADIENT:FF0000>"

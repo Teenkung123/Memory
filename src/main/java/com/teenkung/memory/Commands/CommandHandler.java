@@ -5,6 +5,7 @@ import com.teenkung.memory.Manager.PlayerDataManager;
 import com.teenkung.memory.Manager.PlayerManager;
 import com.teenkung.memory.Manager.ServerManager;
 import com.teenkung.memory.Memory;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -88,7 +89,6 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equalsIgnoreCase("set")) {
                 //Structure: /memory set [player] [modifier] [value]
                 if (args.length >= 4) {
-                    Bukkit.broadcastMessage(args[1]);
                     Player target = Bukkit.getPlayer(args[1]);
                     if (target != null) {
                         try {
@@ -376,14 +376,30 @@ public class CommandHandler implements CommandExecutor {
                     continue;
                 }
             }
+
+            long once_hours = manager.getNextPerionIn() / 3600;
+            long once_minutes = (manager.getNextPerionIn() % 3600) / 60;
+            long once_seconds = manager.getNextPerionIn() % 60;
+
+
+            long full_hours = manager.getFillTime() / 3600;
+            long full_minutes = (manager.getFillTime() % 3600) / 60;
+            long full_seconds = manager.getFillTime() % 60;
+
             s = s.replaceAll("<HIDE_WHEN_0>", "");
-            player.sendMessage(colorize(s
-                    .replaceAll("<memory>", String.valueOf(manager.getCurrentMemory()))
+            player.sendMessage(colorize(PlaceholderAPI.setPlaceholders(player,
+                    s.replaceAll("<memory>", String.valueOf(manager.getCurrentMemory()))
                     .replaceAll("<max_memory>", String.valueOf(ConfigLoader.getMax(manager.getMaxCapacityLevel())))
-                    .replaceAll("<one_regenerate_time>", Memory.formatUnixTime(manager.getNextPerionIn()))
-                    .replaceAll("<one_regenerate_second>", String.valueOf(manager.getNextPerionIn()))
-                    .replaceAll("<full_regenerate_time>", Memory.formatUnixTime(manager.getFillTime()))
-                    .replaceAll("<full_regenerate_second>", String.valueOf(manager.getFillTime()))
+                    .replaceAll("<one_regenerate_time>", Memory.formatUnixTime(Memory.getCurrentUnixSeconds() + manager.getNextPerionIn()))
+                    .replaceAll("<one_regenerate_seconds>", String.valueOf(manager.getNextPerionIn()))
+                    .replaceAll("<one_regenerate_second>", String.valueOf(once_seconds))
+                    .replaceAll("<one_regenerate_minute>", String.valueOf(once_minutes))
+                    .replaceAll("<one_regenerate_hour>", String.valueOf(once_hours))
+                    .replaceAll("<full_regenerate_time>", Memory.formatUnixTime(Memory.getCurrentUnixSeconds() + manager.getFillTime()))
+                    .replaceAll("<full_regenerate_seconds>", String.valueOf(manager.getFillTime()))
+                    .replaceAll("<full_regenerate_second>", String.valueOf(full_seconds))
+                    .replaceAll("<full_regenerate_minute>", String.valueOf(full_minutes))
+                    .replaceAll("<full_regenerate_hour>", String.valueOf(full_hours))
                     .replaceAll("<player_multiplier>", String.valueOf(manager.getBoosterMultiplier()))
                     .replaceAll("<player_duration>", String.valueOf(manager.getBoosterDuration()))
                     .replaceAll("<player_end_time>", Memory.formatUnixTime(manager.getBoosterTimeout()))
@@ -394,7 +410,7 @@ public class CommandHandler implements CommandExecutor {
                     .replaceAll("<server_end_second>", String.valueOf(ServerManager.getTimeOut() - Memory.getCurrentUnixSeconds()))
                     .replaceAll("<bypass_end_time>", Memory.formatUnixTime(manager.getBypassEndTime()))
                     .replaceAll("<bypass_duration>", String.valueOf(manager.getBypassEndTime() - Memory.getCurrentUnixSeconds()))
-            ));
+            )));
         }
     }
 }

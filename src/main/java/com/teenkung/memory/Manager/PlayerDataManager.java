@@ -265,7 +265,6 @@ public class PlayerDataManager {
 
     private void saveLeaveTime() {
         try {
-            Bukkit.broadcastMessage(String.valueOf(logoutTime));
             PreparedStatement statement = Memory.getConnection().prepareStatement("UPDATE Memory SET LeaveUnix = ? WHERE UUID = ?");
             statement.setLong(1, logoutTime);
             statement.setString(2, player.getUniqueId().toString());
@@ -361,12 +360,14 @@ public class PlayerDataManager {
 
         p = Memory.getCurrentUnixSeconds() + t;
         if (rolldownBoost) {
-            long a = (duration-def)+playerDuration - t;
-            long d = Math.max(a, 0);
-            if (d == 0) {
-                setBooster(1D, d);
-            } else {
-                setBooster(multiplier, d);
+            if (timeout >= Memory.getCurrentUnixSeconds()) {
+                long a = (duration-def)+playerDuration - t;
+                long d = Math.max(a, 0);
+                if (d == 0) {
+                    setBooster(1D, d);
+                } else {
+                    setBooster(multiplier, d);
+                }
             }
         }
 

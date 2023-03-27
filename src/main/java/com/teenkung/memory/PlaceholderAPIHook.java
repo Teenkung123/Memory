@@ -43,7 +43,29 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
             } else if (params.equalsIgnoreCase("capacityLevelDisplay")) {
                 return ConfigLoader.getDisplay(manager.getMaxCapacityLevel());
             } else if (params.equalsIgnoreCase("getRegenerationRate")) {
-                return String.valueOf(ConfigLoader.getRegenTime(manager.getRegenLevel()) / (manager.getBoosterMultiplier()+ ServerManager.getMultiplier()));
+                long def = ConfigLoader.getRegenTime(manager.getMaxCapacityLevel());
+
+                double playerMultiplier = 1;
+                long playerDuration = 0;
+                double serverMultiplier = 1;
+                long serverDuration = 0;
+
+                if (manager.getBoosterTimeout() >= Memory.getCurrentUnixSeconds()) {
+                    playerMultiplier = manager.getBoosterMultiplier();
+                    playerDuration = Math.min(manager.getBoosterDuration(), def);
+                }
+
+                if (ServerManager.getTimeOut() >= Memory.getCurrentUnixSeconds()) {
+                    serverMultiplier = ServerManager.getMultiplier();
+                    serverDuration = Math.min(ServerManager.getDuration(), def);
+                }
+
+                double t1 = def - Math.max(serverDuration, playerDuration);
+                double t2 = Math.max(playerDuration-serverDuration, 0);
+                double t3 = Math.max(serverDuration-playerDuration, 0);
+                double t4 = Math.min(serverDuration, playerDuration);
+
+                return String.valueOf(Math.round(t1 + (t2/playerMultiplier) + (t3/serverMultiplier) + (t4/(playerMultiplier+serverMultiplier))));
             } else if (params.equalsIgnoreCase("getMaxCapacity")) {
                 return String.valueOf(ConfigLoader.getMax(manager.getMaxCapacityLevel()));
             } else if (params.equalsIgnoreCase("getTimeLeft")) {
