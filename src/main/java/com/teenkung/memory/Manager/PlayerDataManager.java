@@ -350,7 +350,8 @@ public class PlayerDataManager {
      * - player and server booster duration must not exceed player's default regeneration rate
      * <p>
      * If the rolldownBoost is true, the booster duration will get decreased by the regeneration rate that get from the Mathematical formula
-     *
+     * <p>
+     * NOTE: IF YOU DON'T UNDERSTAND WHAT THIS CODE IS, EXPLAIN IT TO CHATGPT
      * @param rolldownBoost should this calculate also reduce the Duration of the booster too or not
      * @param includeLeftover should this calculate also include the leftover time from the offline calculation
      */
@@ -415,6 +416,8 @@ public class PlayerDataManager {
      * <p>
      * next is it will check if player's bypass time is just ended or not if yes it will send a message to the player
      * and remove the bypass
+     * <p>
+     * NOTE: IF YOU DON'T UNDERSTAND WHAT THIS CODE IS, EXPLAIN IT TO CHATGPT
      */
     public void startGenerationTask() {
         task = Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
