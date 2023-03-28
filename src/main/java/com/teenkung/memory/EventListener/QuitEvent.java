@@ -11,6 +11,7 @@ public class QuitEvent implements Listener {
     @EventHandler
     public void onLeave(PlayerQuitEvent event) {
         PlayerDataManager manager = PlayerManager.getDataManager(event.getPlayer());
+        manager.cancelTask();
         manager.setLeaveTime();
         manager.saveDataToMySQL();
         PlayerManager.removePlayer(event.getPlayer());

@@ -32,6 +32,7 @@ public class PlayerDataManager {
     private Long duration;
     private Long timeout;
     private Long p;
+    private BukkitTask task;
 
 
     /**
@@ -336,7 +337,7 @@ public class PlayerDataManager {
 
     /**
      * Calculates the next time the player will regenerate Memory in Unix seconds
-     * This method uses the Mathmatical formula of:
+     * This method uses the Mathematical formula of:
      * <p>
      * T1+(T2/PlayerMultiplier)+(T3/ServerMultiplier)+(T4/(PlayerMultiplier+ServerMultiplier))
      * Where:
@@ -348,7 +349,7 @@ public class PlayerDataManager {
      * WHERE:
      * - player and server booster duration must not exceed player's default regeneration rate
      * <p>
-     * If the rolldownBoost is true, the booster duration will get decreased by the regeneration rate that get from the Mathmatical formula
+     * If the rolldownBoost is true, the booster duration will get decreased by the regeneration rate that get from the Mathematical formula
      *
      * @param rolldownBoost should this calculate also reduce the Duration of the booster too or not
      * @param includeLeftover should this calculate also include the leftover time from the offline calculation
@@ -401,9 +402,22 @@ public class PlayerDataManager {
     /**
      * Start the regeneration Task of the player
      * ONLY USE ONCE WHEN PLAYER DATA IS LOADED
+     * <p>
+     * This method will execute once when player join the server / plugin loaded
+     * after this method is executed an async task that runs every 1 second will start
+     * this method will check if player is online already or not if player is not online at that time this task will be automatically canceled
+     * but if player online, this task will first check if p variable is null or not, if yes it will calculate the p variable first
+     * but if no it will check if p value is less than or equal to the current unix seconds (check if it is time to regenerate or not)
+     * if yes it will check if current mem is not 0 if yes, it will regenerate a memory
+     * <p>
+     * next is it will check if player's booster is just ended or not if yes it will send a message to the player
+     * and remove the booster
+     * <p>
+     * next is it will check if player's bypass time is just ended or not if yes it will send a message to the player
+     * and remove the bypass
      */
     public void startGenerationTask() {
-        BukkitTask task = Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
+        task = Bukkit.getScheduler().runTaskTimerAsynchronously(Memory.getInstance(), () -> {
             if (player.isOnline()) {
                 if (p == null) {
                     calculatePeriod(false, true);
@@ -422,9 +436,13 @@ public class PlayerDataManager {
                     setBypassTime(-Memory.getCurrentUnixSeconds());
                 }
             }
-            getFillTime();
         }, 0, 20);
     }
+
+    /**
+     * Cancel the regeneration task of the player
+     */
+    public void cancelTask() { task.cancel(); }
 
     /**
      * Get how many seconds are left before player regenerate new memory
